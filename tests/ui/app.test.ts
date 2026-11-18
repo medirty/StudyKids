@@ -50,7 +50,7 @@ afterEach(() => {
 describe('app shell', () => {
   it('first launch shows two profiles', () => {
     boot();
-    const cards = qa('[data-role="profile"]');
+    const cards = qa('[data-role="profile-card"]');
     expect(cards.map(c => c.textContent)).toEqual([expect.stringContaining('Adik'), expect.stringContaining('Kakak')]);
     cards[0].click();
     expect(location.hash).toBe('#/p/adik/1');

@@ -11,6 +11,8 @@ export interface SubjectMapProps {
   hrefFor(subject: string): string;
   onOpen(subject: string): void;
   onStage(stage: Stage): void;
+  /** Shown once when a profile is opened; `speak` only when that profile has autoRead on. */
+  greeting?: { name: string; speak: boolean };
 }
 
 export function renderSubjectMap(el: HTMLElement, props: SubjectMapProps): View {
@@ -56,7 +58,21 @@ export function renderSubjectMap(el: HTMLElement, props: SubjectMapProps): View 
     grid.append(cell);
   }
 
-  const wrap = h('section', { class: 'flex flex-col items-center gap-5 w-full' }, pill, grid);
+  let fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  let greetingEl: HTMLElement | null = null;
+  if (props.greeting) {
+    const { name, speak } = props.greeting;
+    const g = greetingEl = h('p', {
+      class: 'font-display font-bold text-2xl sm:text-3xl text-slate-700 text-center max-w-full [overflow-wrap:anywhere] transition-opacity duration-700',
+      role: 'greeting',
+      text: `Hi, ${name}! 👋`,
+      attrs: { 'aria-live': 'polite' },
+    });
+    fadeTimer = setTimeout(() => { fadeTimer = null; g.classList.add('opacity-0'); }, 4000);
+    if (speak) void props.speech.speak(`Hi, ${name}!`).catch(() => {});
+  }
+
+  const wrap = h('section', { class: 'flex flex-col items-center gap-5 w-full' }, greetingEl, pill, grid);
   el.append(wrap);
-  return { destroy: () => wrap.remove() };
+  return { destroy: () => { if (fadeTimer !== null) clearTimeout(fadeTimer); wrap.remove(); } };
 }

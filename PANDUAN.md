@@ -23,23 +23,29 @@ Setelah selesai, StudyKids bisa dipasang di laptop, HP, dan iPad anak-anak, dan 
 4. Klik tombol **Publish repository** di bagian atas.
 5. Isi nama **studykids** (huruf kecil semua). **Hilangkan centang "Keep this code private"**, karena repositori harus *public*. Lalu klik **Publish repository**.
 
-## 4. Nyalakan GitHub Pages
+## 4. Nyalakan GitHub Pages dan pasang "mesin publikasi"
+
+File pengatur publikasi (`.github/workflows/deploy.yml`) tidak bisa disalin otomatis ke komputer Anda karena berada di folder tersembunyi. Isinya sudah disiapkan di `setup\deploy.yml`. Cukup ditempel sekali lewat website GitHub:
 
 1. Buka `https://github.com/<username>/studykids` di browser.
-2. Klik **Settings** → **Pages** (menu di sebelah kiri).
-3. Pada **Source**, pilih **GitHub Actions**.
-4. Klik tab **Actions** dan tunggu sampai ada **tanda centang hijau** (sekitar 1 sampai 3 menit).
-   **Penting:** proses Actions yang pertama (yang jalan otomatis saat Anda menekan Publish di langkah 3) hampir pasti gagal dengan **tanda silang merah**, karena saat itu Pages belum menyala. Ini normal, bukan salah Anda. Setelah Source diubah ke GitHub Actions, buka proses yang merah itu lalu klik **Re-run all jobs**. Tunggu sampai bertanda centang hijau. Commit baru berikutnya juga akan otomatis berhasil dipublikasikan.
+2. Klik **Settings** → **Pages** (menu di sebelah kiri). Pada **Source**, pilih **GitHub Actions**.
+3. Kembali ke halaman utama repositori, klik **Add file** → **Create new file**.
+4. Di kotak nama file, ketik persis: `.github/workflows/deploy.yml`
+5. Buka file `C:\Users\PC\Documents\StudyKids\setup\deploy.yml` dengan Notepad, salin semua isinya (Ctrl+A, Ctrl+C), lalu tempel (Ctrl+V) ke kotak isi di GitHub.
+6. Klik **Commit changes...** lalu **Commit changes** lagi.
+7. Klik tab **Actions** dan tunggu sampai ada **tanda centang hijau** (sekitar 1 sampai 3 menit). Jika ada proses lama bertanda **silang merah**, abaikan saja; yang penting proses terbaru hijau. Kalau yang terbaru merah, buka lalu klik **Re-run all jobs**.
+8. Di GitHub Desktop, klik **Fetch origin** lalu **Pull origin**, supaya file tadi juga ada di komputer Anda. Langkah ini cukup sekali.
 
 ## 5. Cari alamat aplikasi
 
 Alamat StudyKids adalah:
 
 ```
-https://<username>.github.io/studykids/
+https://<username>.github.io/StudyKids/
 ```
 
-Ganti `<username>` dengan username GitHub Anda, huruf kecil. Contoh: jika username Anda `bimo`, alamatnya `https://bimo.github.io/studykids/`.
+Ganti `<username>` dengan username GitHub Anda, huruf kecil. Contoh: jika username Anda `bimo`, alamatnya `https://bimo.github.io/StudyKids/`.
+Bagian belakang alamat (`StudyKids`) harus sama persis dengan nama repositori (folder) Anda di GitHub, termasuk huruf besar dan kecilnya. Kalau nama repositori Anda berbeda, pakai nama itu.
 Buka alamat itu di browser untuk mencobanya.
 
 ## 6. Pasang aplikasi di perangkat
@@ -72,6 +78,19 @@ Pembukaan pertama **harus online**, supaya aplikasi bisa menyimpan dirinya di pe
 ## 9. Kalau iPad "lupa" aplikasi saat offline
 
 iPad kadang menghapus data aplikasi yang lama tidak dipakai. Cukup buka aplikasi **sekali saat online**, tunggu sampai muncul halaman Adik/Kakak, lalu tutup. Setelah itu bisa offline lagi.
+
+## 10. Mengganti nama anak
+
+Secara awal, nama di aplikasi adalah "Adik" dan "Kakak". Anda bisa menggantinya dengan nama anak Anda. Nama hanya disimpan di perangkat itu, tidak dikirim ke mana pun dan tidak masuk ke GitHub.
+
+1. Di layar "Who's playing?", **tekan dan tahan** kartu anak selama **2 detik**. Akan ada lingkaran yang terisi penuh. Jangan dilepas dulu.
+2. Setelah kotak muncul, ketuk kotak nama supaya papan ketik muncul (di iPad ini perlu), lalu ketik nama (paling banyak 12 huruf).
+3. Pilih gambar avatar.
+4. Ketuk **Save**.
+
+Tombol **Cancel** untuk batal, tombol **Reset** untuk kembali ke "Adik" atau "Kakak".
+
+Penting: ini perlu diisi **sekali untuk setiap perangkat**. Kalau Anda memasang aplikasi di tablet lain, ganti nama lagi di sana. Kalau data browser dihapus, nama kembali ke awal.
 
 ## Jika ada masalah
 

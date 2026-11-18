@@ -1,6 +1,7 @@
 import type { Rng, Sfx, Speech, Toy, ToyContext, View } from './core/types';
 import { parseHash, toHash, type Route } from './core/router';
-import { PROFILES, getLastProfile, setLastProfile } from './core/profiles';
+import { PROFILES, getLastProfile, setLastProfile, type ProfileId } from './core/profiles';
+import { displayProfile } from './core/profileCustom';
 import { createSpeech } from './core/speech';
 import { createSfx } from './core/sfx';
 import { celebrate as defaultCelebrate } from './core/celebrate';
@@ -36,6 +37,7 @@ export function startApp(root: HTMLElement, deps: AppDeps = {}): { destroy(): vo
   let current: View | null = null;
   let renderedHash: string | null = null;
   let destroyed = false;
+  let greeted: ProfileId | null = null; // greet once per profile entry, not on stage toggles or when coming back from a toy
 
   function go(route: Route, replace = false) {
     const hash = toHash(route);
@@ -68,6 +70,7 @@ export function startApp(root: HTMLElement, deps: AppDeps = {}): { destroy(): vo
 
     switch (route.name) {
       case 'profiles':
+        greeted = null;
         current = renderProfilePicker(main, {
           onPick(id) {
             setLastProfile(id);
@@ -77,8 +80,10 @@ export function startApp(root: HTMLElement, deps: AppDeps = {}): { destroy(): vo
         break;
       case 'subjects': {
         const r = route;
+        const greeting = greeted === r.profile ? undefined : { name: displayProfile(r.profile).name, speak: PROFILES[r.profile].autoRead };
+        greeted = r.profile;
         current = renderSubjectMap(main, {
-          stage: r.stage, toys, speech,
+          stage: r.stage, toys, speech, greeting,
           hrefFor: s => toHash({ name: 'toys', profile: r.profile, stage: r.stage, subject: s as never }),
           onOpen: s => go({ name: 'toys', profile: r.profile, stage: r.stage, subject: s as never }),
           onStage: stage => go({ name: 'subjects', profile: r.profile, stage }),

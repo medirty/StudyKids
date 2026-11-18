@@ -52,3 +52,14 @@ body {
 @keyframes frog-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
 .frog-hop { animation: frog-hop 0.3s ease-out; }
 @media (prefers-reduced-motion: reduce) { .frog-hop { animation: none; } }
+
+/* Hidden hold-to-edit on the profile cards: no browser long-press menu, selection or callout. */
+.hold-card {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes hold-fill { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.hold-ring-arc { stroke-dasharray: 100; stroke-dashoffset: 100; animation: hold-fill 2000ms linear forwards; }

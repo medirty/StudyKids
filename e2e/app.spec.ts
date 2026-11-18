@@ -103,3 +103,48 @@ test('round to results: Adik count20 challenge', async ({ page }) => {
   }
   await expect(page.locator('[data-role="results"]')).toContainText('10 correct');
 });
+
+test('long name at 360px does not overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.addInitScript(() => {
+    localStorage.setItem('studykids.profileCustom', JSON.stringify({
+      adik: { name: 'WWWWWWWWWWWW', emoji: '🐱' },
+      kakak: { name: 'MMMMMMMMMMMM', emoji: '🐶' },
+    }));
+  });
+  await page.goto('/');
+  await expect(page.locator('[data-role="profile-card"]').first()).toContainText('WWWWWWWWWWWW');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  for (const c of await page.locator('[data-role="profile-card"]').all()) {
+    const box = (await c.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+  }
+  await page.locator('[data-role="profile-card"][data-profile="adik"]').click();
+  await expect(page.locator('[data-role="greeting"]')).toHaveText('Hi, WWWWWWWWWWWW! 👋');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  const hdr = (await page.locator('header').boundingBox())!;
+  expect(hdr.x + hdr.width).toBeLessThanOrEqual(360);
+});
+
+test('hold a profile card for 2 s to rename it; names stay on the device', async ({ page }) => {
+  await page.goto('/');
+  const adik = page.locator('[data-role="profile-card"][data-profile="adik"]');
+  const box = (await adik.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(800);
+  await page.mouse.up();
+  await expect(page.getByRole('dialog')).toHaveCount(0); // a short hold does nothing
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 4000 });
+  await page.mouse.up();
+  await expect(page).toHaveURL(/\/$|#\/?$/); // not selected
+  await page.locator('[data-role="name-input"]').fill('Nadia');
+  await page.locator('[data-role="avatar"][data-emoji="🦊"]').click();
+  await page.locator('[data-role="save"]').click();
+  await expect(adik).toContainText('Nadia');
+  await expect(adik).toContainText('🦊');
+  await page.reload();
+  await expect(page.locator('[data-role="profile-card"][data-profile="adik"]')).toContainText('Nadia');
+});
