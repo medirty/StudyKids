@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Wide landscape screens (tablet landscape, laptop): side-by-side toy layouts. */
+@custom-variant wide (@media (min-width: 64rem) and (orientation: landscape));
+
+@theme {
+  --color-cream: #FFFDF7;
+  --color-sand: #F5EFE0;
+  --color-coral: #FF6B6B;
+  --color-ocean: #3B82F6;
+  --color-mint: #10B981;
+  --color-amber-toy: #F59E0B;
+  --color-violet-toy: #8B5CF6;
+  --font-display: Fredoka, sans-serif;
+  --font-sans: Nunito, sans-serif;
+}
+
+body {
+  background-color: #FFFDF7;
+  background-image: radial-gradient(#E8DEC8 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* Tactile 3D toy button */
+.toy-btn {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+}
+.toy-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.toy-card {
+  box-shadow: 0 10px 25px -5px rgba(180, 160, 120, 0.18), 0 4px 10px -2px rgba(180, 160, 120, 0.1);
+}
+
+.draggable-hand {
+  cursor: grab;
+  transition: filter 0.15s ease;
+}
+.draggable-hand:hover {
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.25));
+}
+.draggable-hand.grabbing {
+  cursor: grabbing;
+}
+
+@keyframes frog-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+.frog-hop { animation: frog-hop 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .frog-hop { animation: none; } }

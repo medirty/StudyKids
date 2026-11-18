@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tick-Tock Time! Interactive Kid's Clock</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Nunito for playful, legible kid-friendly typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tone.js for gentle synthesized toy clock chimes & celebratory sounds -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Canvas Confetti for celebrating quiz wins -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Fredoka', 'sans-serif'],
+            sans: ['Nunito', 'sans-serif'],
+          },
+          colors: {
+            cream: '#FFFDF7',
+            sand: '#F5EFE0',
+            coral: '#FF6B6B',
+            coralDark: '#E05252',
+            ocean: '#3B82F6',
+            oceanDark: '#2563EB',
+            mint: '#10B981',
+            amberToy: '#F59E0B',
+            violetToy: '#8B5CF6',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #FFFDF7;
+      background-image: radial-gradient(#E8DEC8 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Tactile 3D Toy Button styling */
+    .toy-btn {
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+    }
+    .toy-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .toy-card {
+      box-shadow: 0 10px 25px -5px rgba(180, 160, 120, 0.18), 0 4px 10px -2px rgba(180, 160, 120, 0.1);
+    }
+
+    /* Clock SVG interactive cursor states */
+    .draggable-hand {
+      cursor: grab;
+      transition: filter 0.15s ease;
+    }
+    .draggable-hand:hover {
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.25));
+    }
+    .draggable-hand.grabbing {
+      cursor: grabbing;
+    }
+
+    @keyframes pulseGentle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .animate-pulse-gentle {
+      animation: pulseGentle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 font-sans flex flex-col items-center justify-between p-3 sm:p-6">
+
+  <!-- Top Header & Mode Switcher -->
+  <header class="w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-amberToy flex items-center justify-center text-white shadow-md">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-display text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Tick-Tock Time!</h1>
+        <p class="text-xs sm:text-sm font-bold text-slate-500">Drag the hands & learn <span class="text-emerald-600">Past</span> & <span class="text-violet-600">To</span></p>
+      </div>
+    </div>
+
+    <!-- Mode Switcher Pill -->
+    <div class="bg-sand p-1.5 rounded-2xl flex items-center gap-1.5 border-2 border-amber-200/70 shadow-inner">
+      <button id="btnModeExplore" onclick="setMode('explore')" class="px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all bg-white text-slate-800 shadow-sm">
+        🧭 Explore Clock
+      </button>
+      <button id="btnModeQuiz" onclick="setMode('quiz')" class="px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all text-slate-600 hover:text-slate-800">
+        ⭐ Show Me The Time!
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Interactive Workspace -->
+  <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-5 items-center my-auto">
+
+    <!-- Left Column: Analog Clock Face -->
+    <section class="lg:col-span-6 flex flex-col items-center justify-center bg-white rounded-3xl p-4 sm:p-6 border-4 border-amber-100 toy-card relative">
+
+      <!-- Clock Controls Top Bar (Zones Toggle & Snap Toggle) -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-2 px-1">
+        <button id="btnToggleZones" onclick="toggleZones()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-700 border-2 border-emerald-200 hover:bg-emerald-100 transition">
+          <span id="zoneIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span>Past / To Zones: <strong id="zoneStatusText">ON</strong></span>
+        </button>
+
+        <button id="btnToggleSnap" onclick="toggleSnap()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-50 text-sky-700 border-2 border-sky-200 hover:bg-sky-100 transition" title="Snap minute hand to 5-minute intervals for easier learning">
+          <span>🧲 5-Min Snap: <strong id="snapStatusText">OFF</strong></span>
+        </button>
+      </div>
+
+      <!-- Responsive SVG Clock Container -->
+      <div class="w-full max-w-[360px] sm:max-w-[400px] aspect-square relative flex items-center justify-center my-1">
+        <svg id="clockSvg" viewBox="0 0 400 400" class="w-full h-full overflow-visible touch-none">
+          <defs>
+            <filter id="clockShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#94A3B8" flood-opacity="0.25"/>
+            </filter>
+            <filter id="handShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0F172A" flood-opacity="0.25"/>
+            </filter>
+          </defs>
+
+          <!-- Outer Wooden/Toy Bezel -->
+          <circle cx="200" cy="200" r="192" fill="#FBBF24" filter="url(#clockShadow)" />
+          <circle cx="200" cy="200" r="180" fill="#F59E0B" />
+          <!-- Inner Cream Clock Face -->
+          <circle cx="200" cy="200" r="172" fill="#FFFDF9" />
+
+          <!-- Visual 'PAST' (Right Half) and 'TO' (Left Half) Zones -->
+          <g id="zonesLayer" class="transition-opacity duration-300">
+            <!-- Right Half: PAST Zone (0 to 30 mins) -->
+            <path d="M 200 28 A 172 172 0 0 1 200 372 Z" fill="#ECFDF5" />
+            <!-- Left Half: TO Zone (30 to 60 mins) -->
+            <path d="M 200 372 A 172 172 0 0 1 200 28 Z" fill="#F5F3FF" />
+
+            <!-- Subtle Vertical Center Divider (12 to 6) -->
+            <line x1="200" y1="32" x2="200" y2="368" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6 6" />
+
+            <!-- Zone Watermark Labels -->
+            <text x="275" y="205" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#10B981" opacity="0.32" letter-spacing="2">PAST</text>
+            <text x="125" y="205" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#8B5CF6" opacity="0.32" letter-spacing="2">TO</text>
+          </g>
+
+          <!-- Minute Ticks & Outer Minute Numbers Layer (Generated by JS) -->
+          <g id="ticksLayer"></g>
+
+          <!-- Hour Numbers 1-12 Layer (Generated by JS) -->
+          <g id="numbersLayer"></g>
+
+          <!-- Clock Hands Group -->
+          <g id="handsLayer">
+            <!-- HOUR HAND (Coral Red - Shorter & Thicker) -->
+            <g id="hourHandGroup" class="draggable-hand" filter="url(#handShadow)">
+              <!-- Invisible wide hit target for easy kid finger dragging -->
+              <line x1="200" y1="215" x2="200" y2="95" stroke="transparent" stroke-width="36" stroke-linecap="round" />
+              <!-- Visible Coral Hour Hand -->
+              <line x1="200" y1="215" x2="200" y2="105" stroke="#FF6B6B" stroke-width="14" stroke-linecap="round" />
+              <line x1="200" y1="205" x2="200" y2="112" stroke="#FCA5A5" stroke-width="4" stroke-linecap="round" />
+              <!-- Grab Handle Circle on Tip -->
+              <circle cx="200" cy="105" r="9" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="2.5" />
+            </g>
+
+            <!-- MINUTE HAND (Ocean Blue - Longer & Sleeker) -->
+            <g id="minuteHandGroup" class="draggable-hand" filter="url(#handShadow)">
+              <!-- Invisible wide hit target for easy kid finger dragging -->
+              <line x1="200" y1="220" x2="200" y2="42" stroke="transparent" stroke-width="36" stroke-linecap="round" />
+              <!-- Visible Ocean Blue Minute Hand -->
+              <line x1="200" y1="222" x2="200" y2="54" stroke="#3B82F6" stroke-width="9" stroke-linecap="round" />
+              <line x1="200" y1="210" x2="200" y2="62" stroke="#93C5FD" stroke-width="3" stroke-linecap="round" />
+              <!-- Grab Handle Circle on Tip -->
+              <circle cx="200" cy="54" r="9" fill="#3B82F6" stroke="#FFFFFF" stroke-width="2.5" />
+            </g>
+
+            <!-- Center Brass/Gold Pin -->
+            <circle cx="200" cy="200" r="13" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3" />
+            <circle cx="200" cy="200" r="5" fill="#FFFBEB" />
+          </g>
+        </svg>
+      </div>
+
+      <!-- Hand Color Legend -->
+      <div class="flex items-center justify-center gap-5 mt-2 text-xs sm:text-sm font-bold">
+        <div class="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-full border border-red-200 text-red-700">
+          <span class="w-4 h-2.5 rounded-full bg-coral inline-block"></span>
+          <span>Short Hand = <strong>Hour</strong></span>
+        </div>
+        <div class="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-blue-700">
+          <span class="w-5 h-2 rounded-full bg-ocean inline-block"></span>
+          <span>Long Hand = <strong>Minutes</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Readout, Controls, and Quiz Panel -->
+    <section class="lg:col-span-6 flex flex-col gap-4">
+
+      <!-- EXPLORE MODE PANEL -->
+      <div id="explorePanel" class="flex flex-col gap-4">
+
+        <!-- Big Kid-Friendly Spoken Time Card -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 border-4 border-sky-100 toy-card text-center relative overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400">How we say it</span>
+            <!-- Phrasing Style Toggle (15 past vs quarter past) -->
+            <button id="btnPhraseStyle" onclick="togglePhraseStyle()" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 transition">
+              Style: <span id="phraseStyleLabel">15 past / 15 to</span> 🔄
+            </button>
+          </div>
+
+          <!-- Spoken English Time Phrase -->
+          <div id="spokenTimeDisplay" class="font-display text-3xl sm:text-5xl font-bold text-slate-800 my-3 leading-tight">
+            15 past 3
+          </div>
+
+          <!-- Helper Visual Hint Badge -->
+          <p id="helperTipText" class="text-sm sm:text-base font-bold text-emerald-600 bg-emerald-50 inline-block px-4 py-1.5 rounded-2xl mb-4">
+            15 minutes AFTER 3 o'clock
+          </p>
+
+          <!-- Action Row: Read Aloud Button + Digital Clock Toggle -->
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2 border-t-2 border-slate-100">
+            <button onclick="speakCurrentTime()" class="toy-btn flex items-center gap-2 bg-amberToy hover:bg-amber-500 text-white font-display font-bold text-base sm:text-lg px-5 py-3 rounded-2xl">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"></path>
+              </svg>
+              <span>Read Aloud</span>
+            </button>
+
+            <!-- Digital Time Box with Hide/Reveal Option -->
+            <div class="flex items-center gap-2 bg-slate-100 px-4 py-2.5 rounded-2xl border-2 border-slate-200">
+              <span id="digitalTimeDisplay" class="font-display text-xl sm:text-2xl font-bold text-slate-700 tracking-wider">3:15</span>
+              <button onclick="toggleDigitalVisibility()" id="btnToggleDigital" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50" title="Hide or show digital clock">
+                👁️ Hide
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick-Jump Teaching Buttons Card -->
+        <div class="bg-white rounded-3xl p-5 border-4 border-emerald-100 toy-card">
+          <h2 class="font-display text-lg font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <span>🎯 Quick Jump (Try These!)</span>
+          </h2>
+
+          <!-- Key Milestones: O'clock, 15 past, Half past, 15 to -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+            <button onclick="jumpToMinute(0)" class="toy-btn bg-slate-100 hover:bg-slate-200 text-slate-800 font-display font-semibold py-2.5 px-2 rounded-2xl text-sm sm:text-base border-2 border-slate-200">
+              O'clock (:00)
+            </button>
+            <button onclick="jumpToMinute(15)" class="toy-btn bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-display font-semibold py-2.5 px-2 rounded-2xl text-sm sm:text-base border-2 border-emerald-300">
+              <span id="btnQuick15Past">15 past</span> (:15)
+            </button>
+            <button onclick="jumpToMinute(30)" class="toy-btn bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-display font-semibold py-2.5 px-2 rounded-2xl text-sm sm:text-base border-2 border-emerald-300">
+              Half past (:30)
+            </button>
+            <button onclick="jumpToMinute(45)" class="toy-btn bg-violet-100 hover:bg-violet-200 text-violet-900 font-display font-semibold py-2.5 px-2 rounded-2xl text-sm sm:text-base border-2 border-violet-300">
+              <span id="btnQuick15To">15 to</span> (:45)
+            </button>
+          </div>
+
+          <!-- Step & Random Controls -->
+          <div class="grid grid-cols-3 gap-2.5">
+            <button onclick="adjustMinutes(-5)" class="toy-btn bg-sky-100 hover:bg-sky-200 text-sky-900 font-display font-bold py-2.5 px-3 rounded-2xl text-sm sm:text-base border-2 border-sky-200">
+              ⏪ -5 mins
+            </button>
+            <button onclick="adjustMinutes(5)" class="toy-btn bg-sky-100 hover:bg-sky-200 text-sky-900 font-display font-bold py-2.5 px-3 rounded-2xl text-sm sm:text-base border-2 border-sky-200">
+              +5 mins ⏩
+            </button>
+            <button onclick="setRandomExploreTime()" class="toy-btn bg-coral hover:bg-coralDark text-white font-display font-bold py-2.5 px-3 rounded-2xl text-sm sm:text-base">
+              🎲 Random
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- QUIZ / GAME MODE PANEL ("Show Me The Time!") -->
+      <div id="quizPanel" class="hidden flex-col gap-4">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 border-4 border-violet-200 toy-card text-center">
+
+          <!-- Score & Streak Header -->
+          <div class="flex items-center justify-between mb-3">
+            <span class="bg-violet-100 text-violet-800 font-display font-bold px-3.5 py-1 rounded-full text-sm">
+              ⭐ Stars: <span id="quizScore">0</span>
+            </span>
+            <button onclick="togglePhraseStyle()" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 transition">
+              Phrasing: <span id="quizPhraseStyleLabel">15 past / 15 to</span> 🔄
+            </button>
+          </div>
+
+          <p class="text-sm sm:text-base font-bold text-slate-500 uppercase tracking-wide">Can you set the clock to:</p>
+
+          <!-- Target Time Prompt -->
+          <div id="quizPromptText" class="font-display text-3xl sm:text-5xl font-bold text-violet-700 my-3">
+            15 to 4
+          </div>
+
+          <!-- Hear Prompt Again Button -->
+          <button onclick="speakQuizPrompt()" class="inline-flex items-center gap-2 bg-violet-100 hover:bg-violet-200 text-violet-800 font-bold text-sm px-4 py-2 rounded-xl mb-4 transition">
+            <span>🔊 Hear Prompt Again</span>
+          </button>
+
+          <!-- Feedback / Hint Message Box -->
+          <div id="quizFeedbackBox" class="hidden rounded-2xl p-3.5 mb-4 text-sm sm:text-base font-bold border-2">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button id="btnCheckAnswer" onclick="checkQuizAnswer()" class="toy-btn bg-mint hover:bg-emerald-600 text-white font-display font-bold text-lg py-3.5 px-6 rounded-2xl">
+              ✅ Check My Clock!
+            </button>
+            <button onclick="nextQuizQuestion()" class="toy-btn bg-amberToy hover:bg-amber-500 text-white font-display font-bold text-lg py-3.5 px-6 rounded-2xl">
+              ➡️ Next Time
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Tip Card for Kids in Quiz Mode -->
+        <div class="bg-amber-50/90 rounded-2xl p-4 border-2 border-amber-200 text-xs sm:text-sm text-amber-900 font-semibold flex items-start gap-3">
+          <span class="text-xl">💡</span>
+          <div>
+            <strong>Remember:</strong>
+            <span class="text-emerald-700 font-bold">PAST</span> is on the right side (minutes 1–30).
+            <span class="text-violet-700 font-bold">TO</span> is on the left side (minutes 31–59) counting up to the <em>next</em> hour!
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Subtle Footer -->
+  <footer class="mt-5 text-center text-xs font-bold text-slate-400">
+    Drag the <span class="text-coral">red hour hand</span> or <span class="text-ocean">blue minute hand</span> anywhere on the clock!
+  </footer>
+
+  <script>
+    // 1. STATE MANAGEMENT
+    const state = {
+      // Total minutes from 0 to 719 (12-hour cycle: 0 = 12:00, 195 = 3:15)
+      totalMinutes: 195, // Start at 3:15 ("15 past 3")
+      useQuarterWord: false, // false = "15 past 3", true = "quarter past 3"
+      showZones: true,
+      snapToFive: false,
+      showDigital: true,
+      mode: 'explore', // 'explore' or 'quiz'
+      draggingHand: null, // 'minute' | 'hour' | null
+      prevMinute: 15,
+      // Quiz Mode State
+      quizTargetMinutes: 225, // 3:45 ("15 to 4")
+      quizScore: 0,
+      quizSolvedCurrent: false
+    };
+
+    // 2. SOUND EFFECTS (Tone.js gentle toy woodblock/marimba sounds)
+    let synth = null;
+    let lastTickSoundTime = 0;
+
+    function initAudio() {
+      if (!synth && typeof Tone !== 'undefined') {
+        synth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.01, decay: 0.12, sustain: 0.02, release: 0.2 }
+        }).toDestination();
+        synth.volume.value = -10;
+      }
+    }
+
+    function playTickSound(isMajor = false) {
+      try {
+        initAudio();
+        if (!synth) return;
+        const now = performance.now();
+        if (now - lastTickSoundTime < 45) return; // Throttle rapid ticks
+        lastTickSoundTime = now;
+        if (Tone.context.state !== 'running') Tone.start();
+        synth.triggerAttackRelease(isMajor ? 'G5' : 'C5', '32n');
+      } catch (e) { /* Ignore audio errors before user gesture */ }
+    }
+
+    function playSuccessChime() {
+      try {
+        initAudio();
+        if (!synth) return;
+        if (Tone.context.state !== 'running') Tone.start();
+        const now = Tone.now();
+        synth.triggerAttackRelease('C5', '16n', now);
+        synth.triggerAttackRelease('E5', '16n', now + 0.1);
+        synth.triggerAttackRelease('G5', '16n', now + 0.2);
+        synth.triggerAttackRelease('C6', '8n', now + 0.3);
+      } catch (e) {}
+    }
+
+    function playGentleTryAgain() {
+      try {
+        initAudio();
+        if (!synth) return;
+        if (Tone.context.state !== 'running') Tone.start();
+        const now = Tone.now();
+        synth.triggerAttackRelease('E4', '16n', now);
+        synth.triggerAttackRelease('C4', '8n', now + 0.14);
+      } catch (e) {}
+    }
+
+    // 3. CLOCK FACE SVG GENERATION (Ticks, Minute Markers, Hour Numbers)
+    function buildClockFace() {
+      const ticksLayer = document.getElementById('ticksLayer');
+      const numbersLayer = document.getElementById('numbersLayer');
+      const cx = 200, cy = 200;
+
+      // 60 Minute Ticks + Small 5-minute outer numbers
+      for (let m = 0; m < 60; m++) {
+        const angleDeg = m * 6;
+        const angleRad = (angleDeg - 90) * (Math.PI / 180);
+        const isFiveMin = m % 5 === 0;
+
+        const rOuter = 166;
+        const rInner = isFiveMin ? 153 : 159;
+
+        const x1 = cx + rInner * Math.cos(angleRad);
+        const y1 = cy + rInner * Math.sin(angleRad);
+        const x2 = cx + rOuter * Math.cos(angleRad);
+        const y2 = cy + rOuter * Math.sin(angleRad);
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', isFiveMin ? '#475569' : '#CBD5E1');
+        line.setAttribute('stroke-width', isFiveMin ? '3.5' : '2');
+        line.setAttribute('stroke-linecap', 'round');
+        ticksLayer.appendChild(line);
+
+        // Subtle minute labels on every 5-minute mark (5, 10, 15, 20, 25, 30, etc.)
+        if (isFiveMin) {
+          const rMinLabel = 141;
+          const lx = cx + rMinLabel * Math.cos(angleRad);
+          const ly = cy + rMinLabel * Math.sin(angleRad);
+          const minText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          minText.setAttribute('x', lx);
+          minText.setAttribute('y', ly + 3.5);
+          minText.setAttribute('text-anchor', 'middle');
+          minText.setAttribute('font-family', 'Nunito, sans-serif');
+          minText.setAttribute('font-weight', '800');
+          minText.setAttribute('font-size', '10.5');
+          minText.setAttribute('fill', m === 0 ? '#64748B' : (m <= 30 ? '#059669' : '#7C3AED'));
+          minText.textContent = m === 0 ? '60' : m;
+          ticksLayer.appendChild(minText);
+        }
+      }
+
+      // 12 Large Kid-Friendly Hour Numbers (1 to 12)
+      for (let h = 1; h <= 12; h++) {
+        const angleDeg = h * 30;
+        const angleRad = (angleDeg - 90) * (Math.PI / 180);
+        const rNum = 114;
+
+        const nx = cx + rNum * Math.cos(angleRad);
+        const ny = cy + rNum * Math.sin(angleRad);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', nx);
+        text.setAttribute('y', ny + 9); // Optical vertical centering
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-family', 'Fredoka, sans-serif');
+        text.setAttribute('font-weight', '700');
+        text.setAttribute('font-size', '27');
+        text.setAttribute('fill', '#1E293B');
+        text.textContent = h;
+        numbersLayer.appendChild(text);
+      }
+    }
+
+    // 4. SPOKEN ENGLISH PHRASING ENGINE ("15 past 3", "half past 3", "15 to 4")
+    function getHourAndMinute(totalMins) {
+      const normalized = ((Math.round(totalMins) % 720) + 720) % 720;
+      const rawHour = Math.floor(normalized / 60);
+      const hour12 = rawHour === 0 ? 12 : rawHour;
+      const minute = normalized % 60;
+      const nextHour12 = (hour12 % 12) + 1;
+      return { hour12, minute, nextHour12, normalized };
+    }
+
+    function formatSpokenTime(totalMins, useQuarter = false) {
+      const { hour12, minute, nextHour12 } = getHourAndMinute(totalMins);
+
+      if (minute === 0) {
+        return {
+          phrase: `${hour12} o'clock`,
+          hint: `Right on the hour! Big blue hand points straight up to 12.`,
+          zone: 'oclock'
+        };
+      }
+
+      if (minute === 15) {
+        const label = useQuarter ? `quarter past ${hour12}` : `15 past ${hour12}`;
+        return {
+          phrase: label,
+          hint: `15 minutes AFTER ${hour12} o'clock (right side of the clock).`,
+          zone: 'past'
+        };
+      }
+
+      if (minute === 30) {
+        return {
+          phrase: `half past ${hour12}`,
+          hint: `Halfway around the clock after ${hour12} o'clock!`,
+          zone: 'past'
+        };
+      }
+
+      if (minute === 45) {
+        const label = useQuarter ? `quarter to ${nextHour12}` : `15 to ${nextHour12}`;
+        return {
+          phrase: label,
+          hint: `15 minutes BEFORE ${nextHour12} o'clock (left side of the clock).`,
+          zone: 'to'
+        };
+      }
+
+      if (minute < 30) {
+        const minWord = minute === 1 ? '1 minute' : `${minute}`;
+        return {
+          phrase: `${minWord} past ${hour12}`,
+          hint: `${minute} minute${minute === 1 ? '' : 's'} AFTER ${hour12} o'clock.`,
+          zone: 'past'
+        };
+      } else {
+        const minsToNext = 60 - minute;
+        const minWord = minsToNext === 1 ? '1 minute' : `${minsToNext}`;
+        return {
+          phrase: `${minWord} to ${nextHour12}`,
+          hint: `${minsToNext} minute${minsToNext === 1 ? '' : 's'} BEFORE ${nextHour12} o'clock.`,
+          zone: 'to'
+        };
+      }
+    }
+
+    function formatDigitalTime(totalMins) {
+      const { hour12, minute } = getHourAndMinute(totalMins);
+      return `${hour12}:${minute.toString().padStart(2, '0')}`;
+    }
+
+    // 5. RENDER & UI UPDATES
+    function renderClock() {
+      const { minute, normalized } = getHourAndMinute(state.totalMinutes);
+      const minuteAngle = minute * 6;
+      const hourAngle = normalized * 0.5;
+
+      const hourHandGroup = document.getElementById('hourHandGroup');
+      const minuteHandGroup = document.getElementById('minuteHandGroup');
+
+      hourHandGroup.setAttribute('transform', `rotate(${hourAngle} 200 200)`);
+      minuteHandGroup.setAttribute('transform', `rotate(${minuteAngle} 200 200)`);
+
+      const spokenObj = formatSpokenTime(state.totalMinutes, state.useQuarterWord);
+      document.getElementById('spokenTimeDisplay').textContent = spokenObj.phrase;
+      document.getElementById('digitalTimeDisplay').textContent = formatDigitalTime(state.totalMinutes);
+
+      const tipEl = document.getElementById('helperTipText');
+      tipEl.textContent = spokenObj.hint;
+      if (spokenObj.zone === 'past') {
+        tipEl.className = 'text-sm sm:text-base font-bold text-emerald-700 bg-emerald-50 inline-block px-4 py-1.5 rounded-2xl mb-4 border border-emerald-200';
+      } else if (spokenObj.zone === 'to') {
+        tipEl.className = 'text-sm sm:text-base font-bold text-violet-700 bg-violet-50 inline-block px-4 py-1.5 rounded-2xl mb-4 border border-violet-200';
+      } else {
+        tipEl.className = 'text-sm sm:text-base font-bold text-amber-800 bg-amber-50 inline-block px-4 py-1.5 rounded-2xl mb-4 border border-amber-200';
+      }
+    }
+
+    // 6. POINTER DRAG INTERACTION (Smooth Mouse & Touch Dragging)
+    const clockSvg = document.getElementById('clockSvg');
+    const hourHandEl = document.getElementById('hourHandGroup');
+    const minuteHandEl = document.getElementById('minuteHandGroup');
+
+    function getPointerAngleFromCenter(clientX, clientY) {
+      const rect = clockSvg.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = clientX - centerX;
+      const dy = clientY - centerY;
+      let deg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+      if (deg < 0) deg += 360;
+      return deg;
+    }
+
+    function startDrag(hand, e) {
+      e.preventDefault();
+      state.draggingHand = hand;
+      const { minute } = getHourAndMinute(state.totalMinutes);
+      state.prevMinute = minute;
+      if (hand === 'hour') hourHandEl.classList.add('grabbing');
+      if (hand === 'minute') minuteHandEl.classList.add('grabbing');
+    }
+
+    hourHandEl.addEventListener('pointerdown', (e) => startDrag('hour', e));
+    minuteHandEl.addEventListener('pointerdown', (e) => startDrag('minute', e));
+
+    clockSvg.addEventListener('pointerdown', (e) => {
+      if (state.draggingHand) return;
+      const angle = getPointerAngleFromCenter(e.clientX, e.clientY);
+      state.draggingHand = 'minute';
+      const { minute } = getHourAndMinute(state.totalMinutes);
+      state.prevMinute = minute;
+      handleDragMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!state.draggingHand) return;
+      handleDragMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (state.draggingHand) {
+        hourHandEl.classList.remove('grabbing');
+        minuteHandEl.classList.remove('grabbing');
+        state.draggingHand = null;
+      }
+    });
+
+    function handleDragMove(clientX, clientY) {
+      const angle = getPointerAngleFromCenter(clientX, clientY);
+
+      if (state.draggingHand === 'minute') {
+        let newMinute = Math.round(angle / 6) % 60;
+        if (state.snapToFive) {
+          newMinute = (Math.round(newMinute / 5) * 5) % 60;
+        }
+
+        const diff = newMinute - state.prevMinute;
+        let currentHourBlock = Math.floor(state.totalMinutes / 60);
+
+        if (diff < -30) {
+          currentHourBlock = (currentHourBlock + 1) % 12;
+        } else if (diff > 30) {
+          currentHourBlock = (currentHourBlock - 1 + 12) % 12;
+        }
+
+        const newTotal = currentHourBlock * 60 + newMinute;
+        if (newTotal !== state.totalMinutes) {
+          state.totalMinutes = newTotal;
+          state.prevMinute = newMinute;
+          playTickSound(newMinute % 15 === 0);
+          renderClock();
+        }
+      } else if (state.draggingHand === 'hour') {
+        let rawTotal = Math.round(angle * 2) % 720;
+        if (state.snapToFive) {
+          rawTotal = (Math.round(rawTotal / 5) * 5) % 720;
+        }
+        if (rawTotal !== state.totalMinutes) {
+          state.totalMinutes = rawTotal;
+          state.prevMinute = rawTotal % 60;
+          playTickSound(rawTotal % 60 === 0);
+          renderClock();
+        }
+      }
+    }
+
+    // 7. QUICK CONTROLS & TOGGLES
+    function jumpToMinute(targetMin) {
+      const currentHourBlock = Math.floor(state.totalMinutes / 60);
+      state.totalMinutes = currentHourBlock * 60 + targetMin;
+      state.prevMinute = targetMin;
+      playTickSound(true);
+      renderClock();
+    }
+
+    function adjustMinutes(delta) {
+      state.totalMinutes = ((state.totalMinutes + delta) % 720 + 720) % 720;
+      state.prevMinute = state.totalMinutes % 60;
+      playTickSound(true);
+      renderClock();
+    }
+
+    function setRandomExploreTime() {
+      const randomHour = Math.floor(Math.random() * 12);
+      const randomFiveStep = Math.floor(Math.random() * 12) * 5;
+      state.totalMinutes = randomHour * 60 + randomFiveStep;
+      state.prevMinute = randomFiveStep;
+      playTickSound(true);
+      renderClock();
+    }
+
+    function togglePhraseStyle() {
+      state.useQuarterWord = !state.useQuarterWord;
+      const label = state.useQuarterWord ? 'quarter past / to' : '15 past / 15 to';
+      document.getElementById('phraseStyleLabel').textContent = label;
+      document.getElementById('quizPhraseStyleLabel').textContent = label;
+      document.getElementById('btnQuick15Past').textContent = state.useQuarterWord ? 'Quarter past' : '15 past';
+      document.getElementById('btnQuick15To').textContent = state.useQuarterWord ? 'Quarter to' : '15 to';
+      renderClock();
+      if (state.mode === 'quiz') {
+        updateQuizPromptDisplay();
+      }
+    }
+
+    function toggleZones() {
+      state.showZones = !state.showZones;
+      const zonesLayer = document.getElementById('zonesLayer');
+      const statusText = document.getElementById('zoneStatusText');
+      const dot = document.getElementById('zoneIndicatorDot');
+
+      if (state.showZones) {
+        zonesLayer.style.opacity = '1';
+        statusText.textContent = 'ON';
+        dot.classList.replace('bg-slate-400', 'bg-emerald-500');
+      } else {
+        zonesLayer.style.opacity = '0';
+        statusText.textContent = 'OFF';
+        dot.classList.replace('bg-emerald-500', 'bg-slate-400');
+      }
+    }
+
+    function toggleSnap() {
+      state.snapToFive = !state.snapToFive;
+      document.getElementById('snapStatusText').textContent = state.snapToFive ? 'ON' : 'OFF';
+    }
+
+    function toggleDigitalVisibility() {
+      state.showDigital = !state.showDigital;
+      const display = document.getElementById('digitalTimeDisplay');
+      const btn = document.getElementById('btnToggleDigital');
+      if (state.showDigital) {
+        display.classList.remove('blur-md', 'select-none');
+        btn.textContent = '👁️ Hide';
+      } else {
+        display.classList.add('blur-md', 'select-none');
+        btn.textContent = '🙈 Show';
+      }
+    }
+
+    // 8. TEXT-TO-SPEECH (Read Aloud)
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.92;
+      utterance.pitch = 1.1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentTime() {
+      const spokenObj = formatSpokenTime(state.totalMinutes, state.useQuarterWord);
+      speakText(`It's ${spokenObj.phrase}!`);
+    }
+
+    function speakQuizPrompt() {
+      const targetObj = formatSpokenTime(state.quizTargetMinutes, state.useQuarterWord);
+      speakText(`Can you set the clock to ${targetObj.phrase}?`);
+    }
+
+    // 9. QUIZ / GAME MODE ("Show Me The Time!")
+    function setMode(newMode) {
+      state.mode = newMode;
+      const explorePanel = document.getElementById('explorePanel');
+      const quizPanel = document.getElementById('quizPanel');
+      const btnExplore = document.getElementById('btnModeExplore');
+      const btnQuiz = document.getElementById('btnModeQuiz');
+
+      if (newMode === 'explore') {
+        explorePanel.classList.remove('hidden');
+        quizPanel.classList.add('hidden');
+        quizPanel.classList.remove('flex');
+        btnExplore.className = 'px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all bg-white text-slate-800 shadow-sm';
+        btnQuiz.className = 'px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all text-slate-600 hover:text-slate-800';
+      } else {
+        explorePanel.classList.add('hidden');
+        quizPanel.classList.remove('hidden');
+        quizPanel.classList.add('flex');
+        btnQuiz.className = 'px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all bg-violet-600 text-white shadow-sm';
+        btnExplore.className = 'px-4 py-2 rounded-xl font-display font-semibold text-sm sm:text-base transition-all text-slate-600 hover:text-slate-800';
+        if (!state.snapToFive) toggleSnap();
+        nextQuizQuestion();
+      }
+    }
+
+    function updateQuizPromptDisplay() {
+      const targetObj = formatSpokenTime(state.quizTargetMinutes, state.useQuarterWord);
+      document.getElementById('quizPromptText').textContent = targetObj.phrase;
+    }
+
+    function nextQuizQuestion() {
+      state.quizSolvedCurrent = false;
+      const feedbackBox = document.getElementById('quizFeedbackBox');
+      feedbackBox.classList.add('hidden');
+
+      const weightedPool = [0, 0, 15, 15, 15, 30, 30, 30, 45, 45, 45, 5, 10, 20, 25, 35, 40, 50, 55];
+      const chosenMin = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+      const chosenHour = Math.floor(Math.random() * 12);
+
+      let candidate = chosenHour * 60 + chosenMin;
+      if (candidate === state.quizTargetMinutes) {
+        candidate = (candidate + 75) % 720;
+      }
+      state.quizTargetMinutes = candidate;
+
+      updateQuizPromptDisplay();
+      speakQuizPrompt();
+    }
+
+    function checkQuizAnswer() {
+      const current = getHourAndMinute(state.totalMinutes);
+      const target = getHourAndMinute(state.quizTargetMinutes);
+      const feedbackBox = document.getElementById('quizFeedbackBox');
+      feedbackBox.classList.remove('hidden');
+
+      const minuteDiff = Math.abs(current.minute - target.minute);
+      const isMinuteMatch = minuteDiff <= 1 || minuteDiff === 59;
+      const isHourMatch = current.hour12 === target.hour12;
+
+      if (isHourMatch && isMinuteMatch) {
+        if (!state.quizSolvedCurrent) {
+          state.quizScore += 1;
+          state.quizSolvedCurrent = true;
+          document.getElementById('quizScore').textContent = state.quizScore;
+        }
+
+        const targetPhrase = formatSpokenTime(state.quizTargetMinutes, state.useQuarterWord).phrase;
+        feedbackBox.className = 'rounded-2xl p-3.5 mb-4 text-sm sm:text-base font-bold border-2 bg-emerald-50 border-emerald-300 text-emerald-800';
+        feedbackBox.innerHTML = `🎉 Awesome job! That is <strong>${targetPhrase}</strong> (${formatDigitalTime(state.quizTargetMinutes)})!`;
+
+        playSuccessChime();
+        speakText(`Awesome job! You set it to ${targetPhrase}!`);
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
+        }
+      } else {
+        playGentleTryAgain();
+        const userPhrase = formatSpokenTime(state.totalMinutes, state.useQuarterWord).phrase;
+        let hintMsg = `You set <strong>${userPhrase}</strong>. `;
+
+        if (!isMinuteMatch) {
+          if (target.minute > 30 && current.minute <= 30) {
+            hintMsg += `Hint: Look at the <span class="text-ocean">blue minute hand</span>—"to" means the left (purple) side of the clock!`;
+          } else if (target.minute > 0 && target.minute <= 30 && (current.minute > 30 || current.minute === 0)) {
+            hintMsg += `Hint: Look at the <span class="text-ocean">blue minute hand</span>—"past" means the right (green) side of the clock!`;
+          } else {
+            hintMsg += `Check where the long <span class="text-ocean">blue minute hand</span> is pointing!`;
+          }
+        } else {
+          if (target.minute > 30) {
+            hintMsg += `Your blue minute hand is right! Now check the short <span class="text-coral">red hour hand</span>—it should be almost at <strong>${target.nextHour12}</strong>!`;
+          } else {
+            hintMsg += `Your blue minute hand is right! Now point the short <span class="text-coral">red hour hand</span> toward <strong>${target.hour12}</strong>!`;
+          }
+        }
+
+        feedbackBox.className = 'rounded-2xl p-3.5 mb-4 text-sm sm:text-base font-bold border-2 bg-amber-50 border-amber-300 text-amber-900';
+        feedbackBox.innerHTML = `🤔 Almost! ${hintMsg}`;
+        speakText(`Almost! Check the hands and try again.`);
+      }
+    }
+
+    // 10. INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      buildClockFace();
+      renderClock();
+    });
+  </script>
+</body>
+</html>
