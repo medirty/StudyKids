@@ -142,7 +142,7 @@ function explore(el: HTMLElement, ctx: ToyContext): View {
     h('div', { class: 'flex flex-col gap-4 min-w-0' }, phraseCard, quickCard));
   el.append(root);
 
-  // Speak the phrase once a drag finishes, in auto-read profiles only.
+  // Speak the phrase once a drag finishes, when auto-read is on.
   const onUp = () => {
     if (!dragged) return;
     dragged = false;

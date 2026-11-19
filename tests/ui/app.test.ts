@@ -48,26 +48,110 @@ afterEach(() => {
 });
 
 describe('app shell', () => {
-  it('first launch shows two profiles', () => {
+  it('first launch shows 6 grade cards; only grades with toys open', () => {
     boot();
-    const cards = qa('[data-role="profile-card"]');
-    expect(cards.map(c => c.textContent)).toEqual([expect.stringContaining('Adik'), expect.stringContaining('Kakak')]);
-    cards[0].click();
-    expect(location.hash).toBe('#/p/adik/1');
-    expect(localStorage.getItem('studykids.lastProfile')).toBe('adik');
-    expect(qa('[data-role="subject"], [data-role="subject-locked"]').length).toBe(8);
+    const cards = qa('[data-role="grade-card"]');
+    expect(cards.length).toBe(6);
+    expect(cards[0].textContent).toContain('Grade 1');
+    expect(cards[0].textContent).toContain('Kelas 1');
+    for (const c of cards) {
+      const open = c.dataset.grade === '1' || c.dataset.grade === '3';
+      expect(c.getAttribute('aria-disabled')).toBe(open ? null : 'true');
+      expect(c.textContent?.includes('🔒 Soon')).toBe(!open);
+    }
+    const before = location.hash;
+    cards[1].click();
+    expect(location.hash).toBe(before);
+    expect(qa('[data-role="grade-card"]').length).toBe(6);
+    expect(q('[data-role="autoread-toggle"]')).toBeNull();
+    expect(q('[data-role="home-grades"]')).toBeNull();
   });
 
-  it('relaunch with stored profile opens its subject map', () => {
-    localStorage.setItem('studykids.lastProfile', 'kakak');
+  it('picking Grade 1 opens its subject map and remembers it', () => {
     boot();
-    expect(location.hash).toBe('#/p/kakak/3');
+    qa('[data-role="grade-card"]')[0].click();
+    expect(location.hash).toBe('#/k/1');
+    expect(localStorage.getItem('studykids.lastGrade')).toBe('1');
     expect(qa('[data-role="subject"], [data-role="subject-locked"]').length).toBe(8);
-    expect(q('[data-role="switch"]')).not.toBeNull();
+    expect(q('[data-role="stage-toggle"]')).toBeNull();
+  });
+
+  it('open grade cards have a 🔊 that says "Grade N"', () => {
+    boot();
+    const sp = qa('[data-role="grade-card"]')[2].parentElement!.querySelector<HTMLButtonElement>('[data-role="speak"]')!;
+    sp.click();
+    expect(speech.calls).toEqual(['Grade 3']);
+    expect(qa('[data-role="grade-card"]')[1].parentElement!.querySelector('[data-role="speak"]')).toBeNull();
+  });
+
+  it('relaunch with an open remembered grade opens its subject map', () => {
+    localStorage.setItem('studykids.lastGrade', '1');
+    boot();
+    expect(location.hash).toBe('#/k/1');
+    expect(qa('[data-role="subject"], [data-role="subject-locked"]').length).toBe(8);
+    expect(q('[data-role="home-grades"]')).not.toBeNull();
+  });
+
+  it('a remembered grade without toys falls back to the grade menu', () => {
+    localStorage.setItem('studykids.lastGrade', '4');
+    boot();
+    expect(qa('[data-role="grade-card"]').length).toBe(6);
+  });
+
+  it('🏠 Grades returns to the menu', () => {
+    localStorage.setItem('studykids.lastGrade', '3');
+    goto('#/k/3/math');
+    boot();
+    q<HTMLButtonElement>('[data-role="home-grades"]')!.click();
+    expect(location.hash).toBe('#/');
+    expect(qa('[data-role="grade-card"]').length).toBe(6);
+  });
+
+  it('old storage keys and #/p/ links are dropped', () => {
+    localStorage.setItem('studykids.lastProfile', 'adik');
+    localStorage.setItem('studykids.profileCustom', '{}');
+    goto('#/p/adik/1/math');
+    boot();
+    expect(qa('[data-role="grade-card"]').length).toBe(6);
+    expect(location.hash).toBe('#/');
+    expect(localStorage.getItem('studykids.lastProfile')).toBeNull();
+    expect(localStorage.getItem('studykids.profileCustom')).toBeNull();
+  });
+
+  it('a closed grade route redirects to the grade menu', () => {
+    goto('#/k/5/math');
+    boot();
+    expect(location.hash).toBe('#/');
+    expect(qa('[data-role="grade-card"]').length).toBe(6);
+  });
+
+  it('toys open in Explore for Grade 1 and Challenge for Grade 3', () => {
+    goto('#/k/1/math');
+    boot();
+    qa('[data-role="toy-card"]')[0].click();
+    expect(location.hash).toBe('#/k/1/math/fake/explore');
+    goto('#/k/3/math');
+    qa('[data-role="toy-card"]')[0].click();
+    expect(location.hash).toBe('#/k/3/math/fake/challenge');
+  });
+
+  it('a toy not in the grade redirects to that grade toy list', () => {
+    goto('#/k/3/math/count20/explore');
+    boot();
+    expect(location.hash).toBe('#/k/3/math');
+    expect(qa('[data-role="toy-card"]').length).toBe(1);
+  });
+
+  it('no names or greeting anywhere', () => {
+    boot();
+    const check = () => expect(root.textContent).not.toMatch(/Adik|Kakak|Hi,/);
+    check();
+    qa('[data-role="grade-card"]')[0].click();
+    check();
   });
 
   it('subject map shows 8 cards and locked ones are not links', () => {
-    goto('#/p/adik/1');
+    goto('#/k/1');
     boot();
     expect(qa('[data-role="subject"], [data-role="subject-locked"]').length).toBe(8);
     const open = qa('[data-role="subject"]');
@@ -82,21 +166,77 @@ describe('app shell', () => {
   });
 
   it('toy route with unknown id redirects to toy list', () => {
-    goto('#/p/adik/1/math/nope/challenge');
+    goto('#/k/1/math/nope/challenge');
     boot();
-    expect(location.hash).toBe('#/p/adik/1/math');
+    expect(location.hash).toBe('#/k/1/math');
     expect(qa('[data-role="toy-card"]').length).toBe(1);
   });
 });
 
+describe('read-aloud toggle', () => {
+  const toggle = () => q<HTMLButtonElement>('[data-role="autoread-toggle"]')!;
+
+  it('shows state, labels and is at least 48px tall by class', () => {
+    goto('#/k/3/math');
+    boot();
+    expect(toggle().getAttribute('aria-pressed')).toBe('false');
+    expect(toggle().getAttribute('aria-label')).toBe('Read aloud: off');
+    expect(toggle().className).toContain('min-h-12');
+    toggle().click();
+    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    expect(toggle().getAttribute('aria-label')).toBe('Read aloud: on');
+  });
+
+  it('turning it on mid-round in Grade 3 speaks the next prompt once and persists', () => {
+    goto('#/k/3/math/fake/challenge');
+    boot();
+    expect(speech.speak).not.toHaveBeenCalled();
+    toggle().click();
+    expect(speech.speak).not.toHaveBeenCalled(); // toggling itself is silent
+    answer(1);
+    vi.advanceTimersByTime(1200);
+    expect(speech.calls.filter(c => c === 'Type 2').length).toBe(1);
+    expect(JSON.parse(localStorage.getItem('studykids.autoRead')!)).toEqual({ '3': true });
+    app!.destroy(); root.replaceChildren();
+    speech.calls.length = 0;
+    boot();
+    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    expect(speech.calls).toContain('Type 1');
+  });
+
+  it('turning it off in Grade 1 stops automatic speech', () => {
+    goto('#/k/1/math/fake/challenge');
+    boot();
+    expect(speech.calls).toContain('Type 1');
+    toggle().click();
+    expect(speech.stop).toHaveBeenCalled();
+    (speech.speak as ReturnType<typeof vi.fn>).mockClear();
+    answer(99);
+    vi.advanceTimersByTime(400);
+    answer(1);
+    vi.advanceTimersByTime(1200);
+    expect(speech.speak).not.toHaveBeenCalled();
+  });
+
+  it('is per grade', () => {
+    goto('#/k/1');
+    boot();
+    toggle().click();
+    goto('#/k/3');
+    expect(toggle().getAttribute('aria-pressed')).toBe('false');
+    goto('#/k/1');
+    expect(toggle().getAttribute('aria-pressed')).toBe('false'); // Grade 1 was switched off
+  });
+});
+
 describe('challenge flow', () => {
-  function startKakak() {
-    goto('#/p/kakak/3/math/fake/challenge');
+  function startG3() {
+    goto('#/k/3/math/fake/challenge');
     boot();
   }
 
   it('round flow: wrong then right, rest right → results', () => {
-    startKakak();
+    startG3();
     expect(q('[data-role="progress"]')!.textContent).toBe('Question 1 of 10');
     expect(q('[data-role="prompt"]')!.dataset.target).toBe('1');
     answer(99);
@@ -125,7 +265,7 @@ describe('challenge flow', () => {
   });
 
   it('double click on Check records one attempt', () => {
-    startKakak();
+    startG3();
     const input = q<HTMLInputElement>('[data-role="answer"]')!;
     input.value = '99';
     const btn = q<HTMLButtonElement>('[data-role="check"]')!;
@@ -143,7 +283,7 @@ describe('challenge flow', () => {
   });
 
   it('second wrong answer reveals the explanation and offers Next', () => {
-    startKakak();
+    startG3();
     answer(99);
     vi.advanceTimersByTime(400);
     answer(98);
@@ -154,7 +294,7 @@ describe('challenge flow', () => {
   });
 
   it('retry mistakes builds a 1-question round', () => {
-    startKakak();
+    startG3();
     answer(99);
     vi.advanceTimersByTime(400);
     answer(1);
@@ -172,32 +312,32 @@ describe('challenge flow', () => {
   });
 
   it('leaving mid-speech stops speech', () => {
-    goto('#/p/adik/1/math/fake/challenge');
+    goto('#/k/1/math/fake/challenge');
     boot();
     expect(speech.calls).toContain('Type 1');
     const before = speech.stop.mock.calls.length;
-    goto('#/p/adik/1');
+    goto('#/k/1');
     expect(speech.stop.mock.calls.length).toBeGreaterThan(before);
     expect(() => vi.runAllTimers()).not.toThrow();
   });
 
-  it('kakak does not auto-read prompts', () => {
-    startKakak();
+  it('Grade 3 does not auto-read prompts', () => {
+    startG3();
     expect(speech.speak).not.toHaveBeenCalled();
     expect(q('[data-role="prompt"]')!.textContent).toContain('Type 1');
   });
 
   it('mode pill switches between explore and challenge', () => {
-    goto('#/p/adik/1/math/fake/explore');
+    goto('#/k/1/math/fake/explore');
     boot();
     expect(q('[data-role="explore-body"]')).not.toBeNull();
     qa('[data-role="mode"]').find(b => b.dataset.mode === 'challenge')!.click();
-    expect(location.hash).toBe('#/p/adik/1/math/fake/challenge');
+    expect(location.hash).toBe('#/k/1/math/fake/challenge');
     expect(q('[data-role="progress"]')).not.toBeNull();
   });
 
-  it('kakak (autoRead off): no automatic speech for feedback at all', () => {
-    startKakak();
+  it('Grade 3 (autoRead off): no automatic speech for feedback at all', () => {
+    startG3();
     answer(99); // retry
     vi.advanceTimersByTime(400);
     answer(98); // reveal
@@ -207,8 +347,8 @@ describe('challenge flow', () => {
     expect(speech.speak).not.toHaveBeenCalled();
   });
 
-  it('adik (autoRead on): feedback is spoken', () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 (autoRead on): feedback is spoken', () => {
+    goto('#/k/1/math/fake/challenge');
     boot();
     answer(99);
     expect(speech.calls).toContain('Count again');
@@ -221,7 +361,7 @@ describe('challenge flow', () => {
   });
 
   it('double click on Next advances exactly one question', () => {
-    startKakak();
+    startG3();
     answer(99);
     vi.advanceTimersByTime(400);
     answer(98);
@@ -237,7 +377,7 @@ describe('challenge flow', () => {
     const destroy = vi.fn();
     const demoToy = { ...fakeToy, demonstrate: () => new Promise<View>(r => { resolveDemo = r; }) };
     app = startApp(root, { speech, sfx, celebrate, rng: () => 0.5, toys: [demoToy] });
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     answer(99);
     await new Promise(r => setTimeout(r, 450));
     answer(98);

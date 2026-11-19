@@ -10,25 +10,9 @@ export interface SubjectMapProps {
   speech: Speech;
   hrefFor(subject: string): string;
   onOpen(subject: string): void;
-  onStage(stage: Stage): void;
-  /** Shown once when a profile is opened; `speak` only when that profile has autoRead on. */
-  greeting?: { name: string; speak: boolean };
 }
 
 export function renderSubjectMap(el: HTMLElement, props: SubjectMapProps): View {
-  const pill = h('div', { class: 'inline-flex rounded-full bg-sand p-1 border-2 border-amber-200', role: 'stage-toggle' });
-  for (const s of [1, 3] as Stage[]) {
-    const on = s === props.stage;
-    const b = h('button', {
-      class: `font-display font-bold rounded-full min-h-12 px-5 cursor-pointer ${on ? 'bg-amber-toy text-white shadow' : 'text-slate-600'}`,
-      text: `Stage ${s}`,
-      role: 'stage',
-      attrs: { type: 'button', 'aria-pressed': String(on) },
-    });
-    b.addEventListener('click', () => { if (!on) props.onStage(s); });
-    pill.append(b);
-  }
-
   const grid = h('div', { class: 'grid grid-cols-2 md:grid-cols-4 gap-4 w-full' });
   for (const s of SUBJECTS) {
     const count = props.toys.filter(t => t.meta.subject === s.id && t.meta.stages.includes(props.stage)).length;
@@ -58,21 +42,9 @@ export function renderSubjectMap(el: HTMLElement, props: SubjectMapProps): View 
     grid.append(cell);
   }
 
-  let fadeTimer: ReturnType<typeof setTimeout> | null = null;
-  let greetingEl: HTMLElement | null = null;
-  if (props.greeting) {
-    const { name, speak } = props.greeting;
-    const g = greetingEl = h('p', {
-      class: 'font-display font-bold text-2xl sm:text-3xl text-slate-700 text-center max-w-full [overflow-wrap:anywhere] transition-opacity duration-700',
-      role: 'greeting',
-      text: `Hi, ${name}! 👋`,
-      attrs: { 'aria-live': 'polite' },
-    });
-    fadeTimer = setTimeout(() => { fadeTimer = null; g.classList.add('opacity-0'); }, 4000);
-    if (speak) void props.speech.speak(`Hi, ${name}!`).catch(() => {});
-  }
-
-  const wrap = h('section', { class: 'flex flex-col items-center gap-5 w-full' }, greetingEl, pill, grid);
+  const wrap = h('section', { class: 'flex flex-col items-center gap-5 w-full' },
+    h('h1', { class: 'font-display font-bold text-3xl text-slate-700 text-center', text: `Grade ${props.stage}`, role: 'grade-title' }),
+    grid);
   el.append(wrap);
-  return { destroy: () => { if (fadeTimer !== null) clearTimeout(fadeTimer); wrap.remove(); } };
+  return { destroy: () => wrap.remove() };
 }

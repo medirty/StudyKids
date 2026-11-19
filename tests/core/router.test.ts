@@ -3,41 +3,40 @@ import { parseHash, toHash, type Route } from '../../src/core/router';
 
 describe('router', () => {
   const routes: Route[] = [
-    { name: 'profiles' },
-    { name: 'subjects', profile: 'adik', stage: 1 },
-    { name: 'toys', profile: 'kakak', stage: 3, subject: 'math' },
-    { name: 'toy', profile: 'adik', stage: 1, subject: 'math', toy: 'clock', mode: 'explore' },
-    { name: 'toy', profile: 'kakak', stage: 3, subject: 'gp', toy: 'x', mode: 'challenge' },
+    { name: 'grades' },
+    { name: 'subjects', grade: 1 },
+    { name: 'subjects', grade: 6 },
+    { name: 'toys', grade: 3, subject: 'math' },
+    { name: 'toy', grade: 1, subject: 'math', toy: 'clock', mode: 'explore' },
+    { name: 'toy', grade: 3, subject: 'gp', toy: 'x', mode: 'challenge' },
+    { name: 'toy', grade: 5, subject: 'english', toy: 'a b/c', mode: 'explore' },
   ];
   it('round-trips every variant', () => {
     for (const r of routes) expect(parseHash(toHash(r))).toEqual(r);
   });
   it('formats hashes', () => {
     expect(toHash(routes[0])).toBe('#/');
-    expect(toHash(routes[1])).toBe('#/p/adik/1');
-    expect(toHash(routes[2])).toBe('#/p/kakak/3/math');
-    expect(toHash(routes[3])).toBe('#/p/adik/1/math/clock/explore');
+    expect(toHash(routes[1])).toBe('#/k/1');
+    expect(toHash(routes[3])).toBe('#/k/3/math');
+    expect(toHash(routes[4])).toBe('#/k/1/math/clock/explore');
   });
-  it('falls back to profiles for garbage', () => {
-    for (const h of ['', '#', '#/garbage', '#/p/nobody/1', '#/p', '#/p/', '%%%']) {
-      expect(parseHash(h)).toEqual({ name: 'profiles' });
+  it('falls back to grades for garbage and old routes', () => {
+    for (const h of ['', '#', '#/', '#/garbage', '#/k', '#/k/', '#/k/0', '#/k/7', '#/k/x', '#/k/9/math', '#/k/01', '#/p/adik/1', '#/p/adik/1/math/clock/explore', '%%%']) {
+      expect(parseHash(h)).toEqual({ name: 'grades' });
     }
   });
-  it('invalid stage becomes profile stage', () => {
-    expect(parseHash('#/p/adik/7')).toEqual({ name: 'subjects', profile: 'adik', stage: 1 });
-    expect(parseHash('#/p/kakak/abc')).toEqual({ name: 'subjects', profile: 'kakak', stage: 3 });
-    expect(parseHash('#/p/adik/2/math')).toEqual({ name: 'toys', profile: 'adik', stage: 1, subject: 'math' });
-  });
   it('unknown subject falls back to subjects', () => {
-    expect(parseHash('#/p/kakak/3/history')).toEqual({ name: 'subjects', profile: 'kakak', stage: 3 });
+    expect(parseHash('#/k/3/history')).toEqual({ name: 'subjects', grade: 3 });
   });
-  it('bad mode becomes profile default', () => {
-    expect(parseHash('#/p/kakak/3/math/clock/dance')).toEqual({ name: 'toy', profile: 'kakak', stage: 3, subject: 'math', toy: 'clock', mode: 'challenge' });
-    expect(parseHash('#/p/adik/1/math/clock')).toEqual({ name: 'toy', profile: 'adik', stage: 1, subject: 'math', toy: 'clock', mode: 'explore' });
+  it('bad or missing mode becomes the grade default', () => {
+    expect(parseHash('#/k/1/math/clock/dance')).toEqual({ name: 'toy', grade: 1, subject: 'math', toy: 'clock', mode: 'explore' });
+    expect(parseHash('#/k/4/math/clock/x')).toEqual({ name: 'toy', grade: 4, subject: 'math', toy: 'clock', mode: 'challenge' });
+    expect(parseHash('#/k/2/math/clock')).toEqual({ name: 'toy', grade: 2, subject: 'math', toy: 'clock', mode: 'explore' });
   });
   it('never throws on bad encoding / nullish', () => {
-    expect(() => parseHash('#/p/adik/1/math/%E0%A4%A/explore')).not.toThrow();
+    expect(() => parseHash('#/k/1/math/%E0%A4%A/explore')).not.toThrow();
     expect(() => parseHash(undefined as unknown as string)).not.toThrow();
-    expect(parseHash('#/p/adik/1/math/%E0%A4%A/explore')).toEqual({ name: 'toys', profile: 'adik', stage: 1, subject: 'math' });
+    expect(parseHash('#/k/1/math/%E0%A4%A/explore')).toEqual({ name: 'toys', grade: 1, subject: 'math' });
+    expect(parseHash(undefined as unknown as string)).toEqual({ name: 'grades' });
   });
 });

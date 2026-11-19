@@ -91,7 +91,7 @@ function explore(el: HTMLElement, ctx: ToyContext): View {
     hopButtons(hop),
     h('p', { class: 'text-center text-sm font-bold text-slate-500', text: 'Tap a button to make the frog hop!' }));
   el.append(root);
-  // Adik hears the starting number too.
+  // With auto-read on, the starting number is spoken too.
   if (ctx.autoRead) say(ctx, '0');
   return { destroy: () => root.remove() };
 }

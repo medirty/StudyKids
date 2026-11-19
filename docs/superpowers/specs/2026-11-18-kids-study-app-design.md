@@ -2,6 +2,8 @@
 
 Tanggal: 2026-11-18 · Pemilik: Bimo · Status: disetujui Bimo (2026-11-18)
 
+> **Pembaruan 2026-11-19:** profil Adik/Kakak dan fitur ganti nama sudah diganti dengan menu **Kelas 1–6**, dan rekaman phonics dibatalkan (semua suara memakai suara perangkat). Lihat `2026-11-19-grade-menu-design.md`. Bagian di bawah yang menyebut profil Adik/Kakak berlaku sebagai "Kelas 1"/"Kelas 3".
+
 ## 1. Tujuan dan alasan
 
 Bimo ingin app belajar untuk **dua anaknya sendiri** di rumah:

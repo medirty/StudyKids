@@ -2,15 +2,15 @@ import { test, expect, type Page } from '@playwright/test';
 
 const BASE = 'http://localhost:4173';
 
-const STAGE1_TOYS = ['clock', 'count20', 'numberLine', 'shapes'];
-const STAGE3_TOYS = ['clock', 'multiply', 'fractions', 'placeValue'];
+const GRADE1_TOYS = ['clock', 'count20', 'numberLine', 'shapes'];
+const GRADE3_TOYS = ['clock', 'multiply', 'fractions', 'placeValue'];
 
 test('no external requests', async ({ page }) => {
   const urls: string[] = [];
   page.on('request', (r) => urls.push(r.url()));
 
   await page.goto('/');
-  await page.getByRole('button', { name: /Kakak/ }).click();
+  await page.locator('[data-role="grade-card"][data-grade="3"]').click();
   await page.locator('[data-role="subject"]').first().click();
   await page.locator('[data-role="toy-card"]', { hasText: 'Tick-Tock Time' }).click();
   await page.locator('[data-role="mode"][data-mode="explore"]').click();
@@ -36,7 +36,7 @@ test('works offline after first visit', async ({ browser }) => {
   await context.setOffline(true);
   const resp = await page.reload();
   expect(resp?.fromServiceWorker()).toBe(true);
-  await page.getByRole('button', { name: /Kakak/ }).click();
+  await page.locator('[data-role="grade-card"][data-grade="3"]').click();
   await page.locator('[data-role="subject"]').first().click();
   await page.locator('[data-role="toy-card"]', { hasText: 'Tick-Tock Time' }).click();
   await expect(page.locator('[data-role="progress"]')).toHaveText('Question 1 of 10');
@@ -50,11 +50,11 @@ async function overflow(page: Page): Promise<number> {
 test.describe('360px portrait', () => {
   test.use({ viewport: { width: 360, height: 640 } });
 
-  for (const [profile, stage, toys] of [['adik', 1, STAGE1_TOYS], ['kakak', 3, STAGE3_TOYS]] as const) {
+  for (const [grade, toys] of [[1, GRADE1_TOYS], [3, GRADE3_TOYS]] as const) {
     for (const toy of toys) {
       for (const mode of ['explore', 'challenge']) {
-        test(`${profile} ${toy} ${mode} does not scroll horizontally`, async ({ page }) => {
-          await page.goto(`/#/p/${profile}/${stage}/math/${toy}/${mode}`);
+        test(`Grade ${grade} ${toy} ${mode} does not scroll horizontally`, async ({ page }) => {
+          await page.goto(`/#/k/${grade}/math/${toy}/${mode}`);
           await expect(page.locator('[data-role="home"]')).toBeVisible();
           if (mode === 'challenge') await expect(page.locator('[data-role="progress"]')).toBeVisible();
           await page.waitForTimeout(300);
@@ -65,7 +65,7 @@ test.describe('360px portrait', () => {
   }
 
   test('placeValue explore with every column full does not scroll horizontally', async ({ page }) => {
-    await page.goto('/#/p/kakak/3/math/placeValue/explore');
+    await page.goto('/#/k/3/math/placeValue/explore');
     for (const col of ['h', 't', 'o']) {
       const plus = page.locator(`[data-role="pv-plus"][data-col="${col}"]`);
       for (let i = 0; i < 9; i++) await plus.click();
@@ -75,7 +75,7 @@ test.describe('360px portrait', () => {
   });
 
   test('clock challenge: drag minute hand from 12 to 3 gives 15 minutes', async ({ page }) => {
-    await page.goto('/#/p/kakak/3/math/clock/challenge');
+    await page.goto('/#/k/3/math/clock/challenge');
     const face = page.locator('[data-role="clock-face"]');
     await expect(face).toHaveAttribute('data-minutes', '0');
     const box = (await face.boundingBox())!;
@@ -91,8 +91,8 @@ test.describe('360px portrait', () => {
   });
 });
 
-test('round to results: Adik count20 challenge', async ({ page }) => {
-  await page.goto('/#/p/adik/1/math/count20/challenge');
+test('round to results: Grade 1 count20 challenge', async ({ page }) => {
+  await page.goto('/#/k/1/math/count20/challenge');
   for (let i = 1; i <= 10; i++) {
     await expect(page.locator('[data-role="progress"]')).toHaveText(`Question ${i} of 10`);
     const target = Number(await page.locator('[data-role="prompt"]').getAttribute('data-target'));
@@ -104,47 +104,34 @@ test('round to results: Adik count20 challenge', async ({ page }) => {
   await expect(page.locator('[data-role="results"]')).toContainText('10 correct');
 });
 
-test('long name at 360px does not overflow', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 640 });
-  await page.addInitScript(() => {
-    localStorage.setItem('studykids.profileCustom', JSON.stringify({
-      adik: { name: 'WWWWWWWWWWWW', emoji: '🐱' },
-      kakak: { name: 'MMMMMMMMMMMM', emoji: '🐶' },
-    }));
-  });
-  await page.goto('/');
-  await expect(page.locator('[data-role="profile-card"]').first()).toContainText('WWWWWWWWWWWW');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  for (const c of await page.locator('[data-role="profile-card"]').all()) {
-    const box = (await c.boundingBox())!;
-    expect(box.x + box.width).toBeLessThanOrEqual(360);
-  }
-  await page.locator('[data-role="profile-card"][data-profile="adik"]').click();
-  await expect(page.locator('[data-role="greeting"]')).toHaveText('Hi, WWWWWWWWWWWW! 👋');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  const hdr = (await page.locator('header').boundingBox())!;
-  expect(hdr.x + hdr.width).toBeLessThanOrEqual(360);
-});
+test.describe('grade menu', () => {
+  test.use({ viewport: { width: 360, height: 640 } });
 
-test('hold a profile card for 2 s to rename it; names stay on the device', async ({ page }) => {
-  await page.goto('/');
-  const adik = page.locator('[data-role="profile-card"][data-profile="adik"]');
-  const box = (await adik.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(800);
-  await page.mouse.up();
-  await expect(page.getByRole('dialog')).toHaveCount(0); // a short hold does nothing
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 4000 });
-  await page.mouse.up();
-  await expect(page).toHaveURL(/\/$|#\/?$/); // not selected
-  await page.locator('[data-role="name-input"]').fill('Nadia');
-  await page.locator('[data-role="avatar"][data-emoji="🦊"]').click();
-  await page.locator('[data-role="save"]').click();
-  await expect(adik).toContainText('Nadia');
-  await expect(adik).toContainText('🦊');
-  await page.reload();
-  await expect(page.locator('[data-role="profile-card"][data-profile="adik"]')).toContainText('Nadia');
+  test('360px: two columns, no horizontal scroll, closed grades are locked', async ({ page }) => {
+    await page.goto('/');
+    const cards = page.locator('[data-role="grade-card"]');
+    await expect(cards).toHaveCount(6);
+    expect(await overflow(page)).toBeLessThanOrEqual(360);
+    const boxes = await cards.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), right: r.right }; }));
+    expect(new Set(boxes.map((b) => b.x)).size).toBe(2);
+    for (const b of boxes) expect(b.right).toBeLessThanOrEqual(360);
+    await expect(page.locator('[data-role="grade-card"][data-grade="2"]')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('[data-role="grade-card"][data-grade="2"]')).toContainText('🔒 Soon');
+  });
+
+  test('header toggle is reachable at 360px without scrolling sideways', async ({ page }) => {
+    await page.goto('/#/k/1/math');
+    const t = page.locator('[data-role="autoread-toggle"]');
+    await expect(t).toHaveAttribute('aria-pressed', 'true');
+    await t.click();
+    await expect(t).toHaveAttribute('aria-pressed', 'false');
+    await page.reload();
+    await expect(page.locator('[data-role="autoread-toggle"]')).toHaveAttribute('aria-pressed', 'false');
+    expect(await overflow(page)).toBeLessThanOrEqual(360);
+    const box = (await t.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+    expect(box.height).toBeGreaterThanOrEqual(48);
+    const logo = (await page.locator('header > span').boundingBox())!;
+    expect(logo.height).toBeLessThanOrEqual(box.height); // header stays one row
+  });
 });

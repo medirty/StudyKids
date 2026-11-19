@@ -60,9 +60,9 @@ Ikon StudyKids akan muncul seperti aplikasi biasa.
 
 ## 7. Cek bisa dipakai tanpa internet
 
-1. Buka aplikasi sekali saat **internet menyala**, tunggu sampai halaman pilihan Adik/Kakak muncul.
+1. Buka aplikasi sekali saat **internet menyala**, tunggu sampai halaman pilihan Kelas (Grade 1 sampai 6) muncul.
 2. Tutup aplikasi, lalu nyalakan **mode pesawat** (airplane mode).
-3. Buka aplikasi lagi dari ikonnya. Jika Adik dan Kakak muncul dan permainan bisa dibuka, semuanya sudah siap.
+3. Buka aplikasi lagi dari ikonnya. Jika pilihan Kelas muncul dan permainan bisa dibuka, semuanya sudah siap.
 
 Pembukaan pertama **harus online**, supaya aplikasi bisa menyimpan dirinya di perangkat.
 
@@ -77,20 +77,20 @@ Pembukaan pertama **harus online**, supaya aplikasi bisa menyimpan dirinya di pe
 
 ## 9. Kalau iPad "lupa" aplikasi saat offline
 
-iPad kadang menghapus data aplikasi yang lama tidak dipakai. Cukup buka aplikasi **sekali saat online**, tunggu sampai muncul halaman Adik/Kakak, lalu tutup. Setelah itu bisa offline lagi.
+iPad kadang menghapus data aplikasi yang lama tidak dipakai. Cukup buka aplikasi **sekali saat online**, tunggu sampai muncul halaman pilihan Kelas, lalu tutup. Setelah itu bisa offline lagi.
 
-## 10. Mengganti nama anak
+## 10. Memilih kelas dan suara
 
-Secara awal, nama di aplikasi adalah "Adik" dan "Kakak". Anda bisa menggantinya dengan nama anak Anda. Nama hanya disimpan di perangkat itu, tidak dikirim ke mana pun dan tidak masuk ke GitHub.
+Aplikasi ini tidak memakai nama anak. Yang dipilih adalah **Kelas**.
 
-1. Di layar "Who's playing?", **tekan dan tahan** kartu anak selama **2 detik**. Akan ada lingkaran yang terisi penuh. Jangan dilepas dulu.
-2. Setelah kotak muncul, ketuk kotak nama supaya papan ketik muncul (di iPad ini perlu), lalu ketik nama (paling banyak 12 huruf).
-3. Pilih gambar avatar.
-4. Ketuk **Save**.
+1. Di menu utama ada 6 kartu besar: **Grade 1** sampai **Grade 6** (di bawahnya tertulis "Kelas 1" dan seterusnya). Ketuk kartu kelas yang ingin dipelajari.
+2. Kelas yang belum ada pelajarannya bertanda **🔒 Soon** dan belum bisa dibuka. Saat ini baru Kelas 1 dan Kelas 3 yang bisa dibuka.
+3. Kelas yang terakhir dibuka diingat. Lain kali aplikasi langsung masuk ke kelas itu. Untuk pindah kelas, ketuk tombol **🏠 Grades** di bagian atas.
+4. **Kelas 1 dan 2** dibacakan otomatis (soal dan komentar dibacakan dengan suara). Permainan dibuka di mode **Explore** (menjelajah).
+5. **Kelas 3 sampai 6** tidak dibacakan otomatis. Anak bisa mengetuk tombol **🔊** di samping soal kalau mau mendengar. Permainan dibuka di mode **Challenge** (soal).
+6. Tombol **🔊 On / 🔇 Off** di bagian atas layar menyalakan atau mematikan bacaan otomatis untuk kelas yang sedang dibuka. Misalnya anak Kelas 3 yang masih perlu dibacakan: ketuk tombol itu sampai tertulis **On**.
 
-Tombol **Cancel** untuk batal, tombol **Reset** untuk kembali ke "Adik" atau "Kakak".
-
-Penting: ini perlu diisi **sekali untuk setiap perangkat**. Kalau Anda memasang aplikasi di tablet lain, ganti nama lagi di sana. Kalau data browser dihapus, nama kembali ke awal.
+Pilihan kelas dan pilihan suara disimpan **di perangkat itu saja**, tidak dikirim ke mana pun. Kalau Anda memasang aplikasi di tablet lain, atur lagi di sana. Kalau data browser dihapus, semuanya kembali ke awal.
 
 ## Jika ada masalah
 

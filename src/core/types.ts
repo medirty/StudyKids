@@ -1,5 +1,5 @@
 export type Rng = () => number; // [0,1)
-export type Stage = 1 | 3;
+export type Stage = 1 | 2 | 3 | 4 | 5 | 6;
 export type SubjectId = 'math' | 'english' | 'science' | 'gp' | 'wellbeing' | 'art' | 'music' | 'computing';
 export type Mode = 'explore' | 'challenge';
 // prompt: shown (and spoken unless `spoken` is set). spoken: words for symbol-heavy prompts ("4 times 3").

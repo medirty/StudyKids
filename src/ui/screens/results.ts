@@ -31,7 +31,7 @@ export function renderResults(el: HTMLElement, props: ResultsProps): View {
         speakButton(`${spokenPrompt}. ${answered}. ${ex.why} ${ex.how}`, props.speech),
         toy.demonstrate && button('▶ Show me', () => {
           demo.replaceChildren();
-          // An explicit tap: the demo may speak even for Kakak (autoRead off). R13b
+          // An explicit tap: the demo may speak even when auto-read is off. R13b
           void toy.demonstrate!(demo, m.question, { ...ctx, autoRead: true }).then(v => {
             if (destroyed) v.destroy(); else views.push(v);
           }).catch(() => {});

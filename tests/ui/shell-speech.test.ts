@@ -80,8 +80,8 @@ afterEach(() => {
 });
 
 describe('reveal + demonstrate (R13)', () => {
-  it('kakak reveal: demo runs but nothing is spoken at all', async () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+  it('Grade 3 reveal: demo runs but nothing is spoken at all', async () => {
+    goto('#/k/3/math/fake/challenge');
     boot();
     reveal();
     await flush();
@@ -90,8 +90,8 @@ describe('reveal + demonstrate (R13)', () => {
     expect(speech.speak).not.toHaveBeenCalled();
   });
 
-  it('adik reveal: the explanation is spoken in full before the demo starts', async () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 reveal: the explanation is spoken in full before the demo starts', async () => {
+    goto('#/k/1/math/fake/challenge');
     boot();
     holdPrefix = "Let's look together";
     reveal();
@@ -105,8 +105,8 @@ describe('reveal + demonstrate (R13)', () => {
     expect(calls.indexOf('demo speaks')).toBeGreaterThan(calls.findIndex(c => c.startsWith("Let's look together")));
   });
 
-  it('adik reveal: pressing Next before the explanation ends cancels the demo start', async () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 reveal: pressing Next before the explanation ends cancels the demo start', async () => {
+    goto('#/k/1/math/fake/challenge');
     boot();
     holdPrefix = "Let's look together";
     reveal();
@@ -118,19 +118,19 @@ describe('reveal + demonstrate (R13)', () => {
     expect(q('[data-role="demo"]')).toBeNull();
   });
 
-  it('adik reveal: leaving before the explanation ends cancels the demo start', async () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 reveal: leaving before the explanation ends cancels the demo start', async () => {
+    goto('#/k/1/math/fake/challenge');
     boot();
     holdPrefix = "Let's look together";
     reveal();
-    goto('#/p/adik/1');
+    goto('#/k/1');
     release!();
     await flush();
     expect(demoCalls.length).toBe(0);
   });
 
-  it('adik reveal: a failing explanation speech still starts the demo', async () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 reveal: a failing explanation speech still starts the demo', async () => {
+    goto('#/k/1/math/fake/challenge');
     speech.speak = vi.fn((t: string) => { calls.push(t); return t.startsWith("Let's look") ? Promise.reject(new Error('x')) : Promise.resolve(); });
     boot();
     reveal();
@@ -145,9 +145,40 @@ function finishRoundWithOneMistake() {
   for (let i = 2; i <= 10; i++) { answer(i); vi.advanceTimersByTime(1200); }
 }
 
+describe('toggle drives speech rules', () => {
+  const toggle = () => q<HTMLButtonElement>('[data-role="autoread-toggle"]')!;
+
+  it('Grade 3 with the toggle on: explanation is spoken before the demo, demo speaks', async () => {
+    goto('#/k/3/math/fake/challenge');
+    boot();
+    toggle().click();
+    holdPrefix = "Let's look together";
+    reveal();
+    await flush();
+    expect(demoCalls.length).toBe(0);
+    release!();
+    await flush();
+    expect(demoCalls.length).toBe(1);
+    expect(demoCalls[0].autoRead).toBe(true);
+    expect(calls).toContain('demo speaks');
+  });
+
+  it('Grade 1 with the toggle off: reveal is silent and the demo does not speak', async () => {
+    goto('#/k/1/math/fake/challenge');
+    boot();
+    toggle().click();
+    calls.length = 0;
+    reveal();
+    await flush();
+    expect(demoCalls.length).toBe(1);
+    expect(demoCalls[0].autoRead).toBe(false);
+    expect(calls).toEqual([]);
+  });
+});
+
 describe('results screen', () => {
-  it('Show me as kakak is an explicit tap, so the demo speaks', async () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+  it('Show me in Grade 3 (auto-read off) is an explicit tap, so the demo speaks', async () => {
+    goto('#/k/3/math/fake/challenge');
     boot();
     finishRoundWithOneMistake();
     await flush();
@@ -162,25 +193,25 @@ describe('results screen', () => {
   });
 
   it('score heading has a 🔊 that reads the score', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     finishRoundWithOneMistake();
-    expect(speech.speak).not.toHaveBeenCalled(); // kakak: no auto-read of the score
+    expect(speech.speak).not.toHaveBeenCalled(); // Grade 3: no auto-read of the score
     const btn = q<HTMLButtonElement>('[data-role="speak-score"]')!;
     expect(btn).not.toBeNull();
     btn.click();
     expect(calls).toEqual(['9 correct. 1 to practise.']);
   });
 
-  it('adik: the score is read once on arrival', () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1: the score is read once on arrival', () => {
+    goto('#/k/1/math/fake/challenge');
     boot();
     finishRoundWithOneMistake();
     expect(calls.filter(c => c === '9 correct. 1 to practise.').length).toBe(1);
   });
 
   it('mistake card 🔊 reads prompt, your answer, why and how', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     finishRoundWithOneMistake();
     q<HTMLButtonElement>('[data-role="mistake"] [data-role="speak"]')!.click();
@@ -192,7 +223,7 @@ describe('results screen', () => {
       ...demoToy,
       generateQuestions: (s, n, r) => fakeToy.generateQuestions(s, n, r).map(x => ({ ...x, prompt: `${x.target} × 1 = ?`, spoken: `${x.target} times 1` })),
     };
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot([spokenToy]);
     finishRoundWithOneMistake();
     q<HTMLButtonElement>('[data-role="mistake"] [data-role="speak"]')!.click();
@@ -200,7 +231,7 @@ describe('results screen', () => {
   });
 
   it('confetti on results whenever at least one answer was right (R15)', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     // 1 right, 9 wrong
     answer(1);
@@ -211,7 +242,7 @@ describe('results screen', () => {
   });
 
   it('no results confetti when nothing was right', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     for (let i = 1; i <= 10; i++) { reveal(); q<HTMLButtonElement>('[data-role="next"]')!.click(); }
     expect(q('[data-role="results"]')!.textContent).toContain('0 correct');
@@ -225,8 +256,8 @@ describe('spoken prompts (R14)', () => {
     generateQuestions: (s, n, r) => fakeToy.generateQuestions(s, n, r).map(x => ({ ...x, prompt: `${x.target} × 3 = ?`, spoken: `${x.target} times 3` })),
   });
 
-  it('adik auto-read speaks the spoken form, not the symbols', () => {
-    goto('#/p/adik/1/math/fake/challenge');
+  it('Grade 1 auto-read speaks the spoken form, not the symbols', () => {
+    goto('#/k/1/math/fake/challenge');
     boot([symToy()]);
     expect(calls).toEqual(['1 times 3']);
     expect(q('[data-role="prompt"]')!.textContent).toContain('1 × 3 = ?');
@@ -240,7 +271,7 @@ describe('spoken prompts (R14)', () => {
       onWord = opts?.onWord;
       return new Promise<void>(r => { done = r; });
     });
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot([symToy()]);
     q<HTMLButtonElement>('[data-role="prompt"] [data-role="speak"]')!.click();
     expect(calls).toEqual(['1 times 3']);
@@ -260,7 +291,7 @@ describe('spoken prompts (R14)', () => {
       onWord = opts?.onWord;
       return new Promise<void>(() => {});
     });
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     q<HTMLButtonElement>('[data-role="prompt"] [data-role="speak"]')!.click();
     expect(calls).toEqual(['Type 1']);
@@ -272,10 +303,10 @@ describe('spoken prompts (R14)', () => {
 
 describe('routing', () => {
   it('a subject with no toys for the stage redirects (replace) to the subject map', () => {
-    goto('#/p/adik/1/english');
+    goto('#/k/1/english');
     const replace = vi.spyOn(history, 'replaceState');
     boot();
-    expect(location.hash).toBe('#/p/adik/1');
+    expect(location.hash).toBe('#/k/1');
     expect(replace).toHaveBeenCalled();
     expect(qa('[data-role="subject"], [data-role="subject-locked"]').length).toBe(8);
     replace.mockRestore();
@@ -284,16 +315,16 @@ describe('routing', () => {
 
 describe('wide layout (I-4)', () => {
   it('only the toy route widens the page on large screens', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     const main = root.querySelector('main')!;
     expect(main.classList.contains('lg:max-w-6xl')).toBe(true);
-    goto('#/p/kakak/3');
+    goto('#/k/3');
     expect(main.classList.contains('lg:max-w-6xl')).toBe(false);
   });
 
   it('challenge puts the toy left and prompt/feedback/Check right on wide landscape', () => {
-    goto('#/p/kakak/3/math/fake/challenge');
+    goto('#/k/3/math/fake/challenge');
     boot();
     const layout = q('[data-role="challenge-layout"]')!;
     expect(layout.className).toContain('wide:grid');
