@@ -79,13 +79,18 @@ export function renderToyScreen(el: HTMLElement, props: ToyScreenProps): View {
       const stageBox = h('div', { class: 'bg-white rounded-3xl border-4 border-amber-100 toy-card p-3 sm:p-5 w-full overflow-hidden wide:col-start-1 wide:row-start-1 wide:row-span-4' });
       const view: ChallengeView<unknown> = toy.renderChallenge(stageBox, q, ctx);
       track(view);
-      const feedback = h('div', { class: 'w-full wide:col-start-2' });
+      const feedback = h('div', { class: 'w-full' });
       const check = button('✅ Check', onCheck, 'bg-mint text-white text-2xl w-full py-4 disabled:opacity-50', 'check');
-      const actions = h('div', { class: 'flex flex-col gap-3 w-full wide:col-start-2' }, check);
+      const actions = h('div', { class: 'flex flex-col gap-3 w-full' }, check);
+      // Feedback and Check/Next stay pinned to the bottom of the viewport so tall toys never push them below the fold.
+      const bar = h('div', {
+        class: 'challenge-bar sticky bottom-0 z-10 flex flex-col gap-3 w-full bg-[#FFFDF7] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_8px_-6px_rgba(0,0,0,0.18)] wide:col-start-2 wide:row-start-3 wide:row-span-2',
+        role: 'challenge-bar',
+      }, feedback, actions);
       promptBox.classList.add('wide:col-start-2');
       body.append(h('div', { class: 'flex flex-col gap-4 w-full wide:grid wide:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] wide:grid-rows-[auto_auto_auto_1fr] wide:items-start', role: 'challenge-layout' },
         h('p', { class: 'font-display font-bold text-slate-500 text-center wide:col-start-2', text: `Question ${round.index + 1} of ${round.total}`, role: 'progress' }),
-        promptBox, stageBox, feedback, actions));
+        promptBox, stageBox, bar));
 
       let busy = false;
       function onCheck() {
@@ -128,6 +133,11 @@ export function renderToyScreen(el: HTMLElement, props: ToyScreenProps): View {
             view.destroy();
             bodyViews = bodyViews.filter(v => v !== view);
             stageBox.replaceChildren();
+            // The demo is the point of the reveal: make sure it is on screen (jsdom has no scrollIntoView).
+            if (typeof stageBox.scrollIntoView === 'function') {
+              const reduced = !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+              stageBox.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+            }
             const stale = () => destroyed || myToken !== questionToken;
             void explained.then(() => {
               if (stale()) return;

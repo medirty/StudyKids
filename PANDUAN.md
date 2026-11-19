@@ -84,13 +84,27 @@ iPad kadang menghapus data aplikasi yang lama tidak dipakai. Cukup buka aplikasi
 Aplikasi ini tidak memakai nama anak. Yang dipilih adalah **Kelas**.
 
 1. Di menu utama ada 6 kartu besar: **Grade 1** sampai **Grade 6** (di bawahnya tertulis "Kelas 1" dan seterusnya). Ketuk kartu kelas yang ingin dipelajari.
-2. Kelas yang belum ada pelajarannya bertanda **🔒 Soon** dan belum bisa dibuka. Saat ini baru Kelas 1 dan Kelas 3 yang bisa dibuka.
+2. Kelas yang belum ada pelajarannya bertanda **🔒 Soon** dan belum bisa dibuka. Saat ini baru Kelas 1 dan Kelas 3 yang bisa dibuka. Keduanya punya pelajaran **Maths, English, dan Science**. Mata pelajaran lain masih bertanda **🔒 Soon**.
 3. Kelas yang terakhir dibuka diingat. Lain kali aplikasi langsung masuk ke kelas itu. Untuk pindah kelas, ketuk tombol **🏠 Grades** di bagian atas.
 4. **Kelas 1 dan 2** dibacakan otomatis (soal dan komentar dibacakan dengan suara). Permainan dibuka di mode **Explore** (menjelajah).
 5. **Kelas 3 sampai 6** tidak dibacakan otomatis. Anak bisa mengetuk tombol **🔊** di samping soal kalau mau mendengar. Permainan dibuka di mode **Challenge** (soal).
 6. Tombol **🔊 On / 🔇 Off** di bagian atas layar menyalakan atau mematikan bacaan otomatis untuk kelas yang sedang dibuka. Misalnya anak Kelas 3 yang masih perlu dibacakan: ketuk tombol itu sampai tertulis **On**.
 
 Pilihan kelas dan pilihan suara disimpan **di perangkat itu saja**, tidak dikirim ke mana pun. Kalau Anda memasang aplikasi di tablet lain, atur lagi di sana. Kalau data browser dihapus, semuanya kembali ke awal.
+
+## 11. Permainan yang ada
+
+**Kelas 1**
+
+- English: Sound Builder (menyusun kata dari bunyi huruf), Tricky Word Pop (kata-kata yang sulit), Sentence Fixer (memperbaiki kalimat).
+- Science: My Body & Senses (tubuh dan panca indera), Alive or Not? (hidup atau tidak), Material Sorter (bahan benda), Push or Pull? (dorong atau tarik).
+
+**Kelas 3**
+
+- English: Word Sorter (mengelompokkan kata), Past Tense Machine (kata kerja bentuk lampau), Prefix & Suffix Lab (awalan dan akhiran), Story Time (membaca cerita).
+- Science: Grow a Plant (tumbuhnya tanaman), Magnet Test (magnet), Light & Shadows (cahaya dan bayangan), Skeleton Builder (tulang).
+
+Semua permainan punya mode **Explore** (menjelajah) dan **Challenge** (10 soal).
 
 ## Jika ada masalah
 

@@ -30,10 +30,14 @@ These are the only runtime dependencies that end up in the built app. Everything
 
 ## Curriculum
 
-The learning goals follow the Cambridge Primary Mathematics learning objectives, summarised in our own words.
+The learning goals follow the Cambridge Primary Mathematics, English and Science learning objectives, summarised in our own words.
 No Cambridge text, questions or images are copied. StudyKids is not affiliated with or endorsed by Cambridge University Press & Assessment.
+
+## Content
+
+All stories, sentences, word lists, science facts and activities in the English and Science toys are original, written for StudyKids.
+No new third-party assets (fonts, images, sounds or code) were added for them.
 
 ## Audio
 
-Placeholder for Phase 2. Sound effects are currently generated in the browser, and speech uses the device's own
-text-to-speech voices. Any recorded audio added later will be listed here with its source and licence.
+All speech uses the device's own voice. Sound effects are generated in the browser. There are no audio files.

@@ -44,7 +44,9 @@ export function createSpeech(
         };
         finishCurrent = finish;
         try {
-          synth.cancel();
+          // Cancel only a busy engine: cancelling an idle one right before speak() makes iPad Safari
+          // drop the next utterance, which breaks chained speech (e.g. paragraph-by-paragraph read-along).
+          if (synth.speaking || synth.pending) synth.cancel();
           const u = new SpeechSynthesisUtterance(text);
           const voice = pickVoice(synth.getVoices());
           if (voice) u.voice = voice as SpeechSynthesisVoice;

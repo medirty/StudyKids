@@ -223,7 +223,7 @@ export const shapesToy: Toy<ShapeQuestion, ShapeId | null> = {
     await sleep(DEMO_STEP_MS * 2);
     if (!alive()) return view;
 
-    if (ctx.autoRead) say(ctx, SHAPES[q.target].fact);
+    if (ctx.autoRead && SHAPES[q.target].dim === 2 && SIDES[q.target]) say(ctx, "Let's count the sides.");
     if (SHAPES[q.target].dim === 2) {
       if (!SIDES[q.target]) { setPulsing(tile, true); countEl.textContent = 'No straight sides. It is round!'; return view; }
       await traceSides(tile, q.target, sleep, alive, (n, total) => {

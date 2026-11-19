@@ -235,6 +235,21 @@ describe('challenge flow', () => {
     boot();
   }
 
+  it('feedback and Check live in a sticky bar pinned to the bottom of the viewport', () => {
+    startG3();
+    const bar = q('[data-role="challenge-bar"]')!;
+    expect(bar.classList.contains('sticky')).toBe(true);
+    expect(bar.classList.contains('bottom-0')).toBe(true);
+    expect(bar.className).toContain('bg-[#FFFDF7]');
+    expect(bar.className).toContain('shadow-');
+    expect(bar.contains(q('[data-role="check"]'))).toBe(true);
+    answer(99);
+    expect(bar.contains(q('[data-role="hint"]'))).toBe(true);
+    vi.advanceTimersByTime(400);
+    answer(98);
+    expect(bar.contains(q('[data-role="next"]'))).toBe(true);
+  });
+
   it('round flow: wrong then right, rest right → results', () => {
     startG3();
     expect(q('[data-role="progress"]')!.textContent).toBe('Question 1 of 10');

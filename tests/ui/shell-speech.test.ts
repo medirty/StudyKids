@@ -145,6 +145,26 @@ function finishRoundWithOneMistake() {
   for (let i = 2; i <= 10; i++) { answer(i); vi.advanceTimersByTime(1200); }
 }
 
+describe('reveal scrolls the demo into view', () => {
+  it.each([[false, 'smooth'], [true, 'auto']] as const)('reduced motion %s uses behavior %s', async (reduced, behavior) => {
+    const scroll = vi.fn();
+    const proto = HTMLElement.prototype as unknown as { scrollIntoView?: unknown };
+    proto.scrollIntoView = scroll;
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: reduced && query.includes('reduce'), media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      goto('#/k/3/math/fake/challenge');
+      boot();
+      reveal();
+      await flush();
+      expect(demoCalls.length).toBe(1);
+      expect(scroll).toHaveBeenCalledWith({ block: 'nearest', behavior });
+    } finally {
+      delete proto.scrollIntoView;
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe('toggle drives speech rules', () => {
   const toggle = () => q<HTMLButtonElement>('[data-role="autoread-toggle"]')!;
 
@@ -331,8 +351,9 @@ describe('wide layout (I-4)', () => {
     const stage = q('[data-role="answer"]')!.parentElement!;
     expect(stage.className).toContain('wide:col-start-1');
     for (const sel of ['[data-role="progress"]', '[data-role="prompt"]']) expect(q(sel)!.className).toContain('wide:col-start-2');
-    expect(q('[data-role="check"]')!.parentElement!.className).toContain('wide:col-start-2');
-    // DOM order keeps the narrow stacking: progress, prompt, toy, feedback, actions
+    // feedback + actions share one sticky bar, which takes the right-hand column
+    expect(q('[data-role="check"]')!.closest('[data-role="challenge-bar"]')!.className).toContain('wide:col-start-2');
+    // DOM order keeps the narrow stacking: progress, prompt, toy, bar
     expect(Array.from(layout.children).indexOf(stage)).toBe(2);
   });
 });

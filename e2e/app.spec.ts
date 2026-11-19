@@ -135,3 +135,60 @@ test.describe('grade menu', () => {
     expect(logo.height).toBeLessThanOrEqual(box.height); // header stays one row
   });
 });
+
+const PHASE2_TOYS = [
+  { grade: 1, subject: 'english', toys: ['soundBuilder', 'trickyWords', 'sentenceFixer'] },
+  { grade: 1, subject: 'science', toys: ['bodySenses', 'aliveOrNot', 'materials', 'pushPull'] },
+  { grade: 3, subject: 'english', toys: ['wordSorter', 'pastTense', 'affixLab', 'storyTime'] },
+  { grade: 3, subject: 'science', toys: ['growPlant', 'magnets', 'shadows', 'skeleton'] },
+] as const;
+
+test.describe('phase 2 toys at 360px', () => {
+  test.use({ viewport: { width: 360, height: 640 } });
+
+  for (const { grade, subject, toys } of PHASE2_TOYS) {
+    for (const toy of toys) {
+      for (const mode of ['explore', 'challenge']) {
+        test(`Grade ${grade} ${subject} ${toy} ${mode}: no horizontal scroll, no console errors`, async ({ page }) => {
+          const errors: string[] = [];
+          page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+          page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
+          await page.goto(`/#/k/${grade}/${subject}/${toy}/${mode}`);
+          await expect(page.locator('[data-role="home"]')).toBeVisible();
+          if (mode === 'challenge') await expect(page.locator('[data-role="progress"]')).toBeVisible();
+          await page.waitForTimeout(400);
+          expect(await overflow(page)).toBeLessThanOrEqual(360);
+          expect(errors).toEqual([]);
+        });
+      }
+    }
+  }
+
+  for (const grade of [1, 3]) {
+    test(`Grade ${grade} subject map: English and Science unlocked, others Soon`, async ({ page }) => {
+      await page.goto(`/#/k/${grade}`);
+      await expect(page.locator('[data-role="grade-title"]')).toHaveText(`Grade ${grade}`);
+      const unlocked = page.locator('[data-role="subject"]');
+      await expect(unlocked).toHaveCount(3);
+      await expect(unlocked).toContainText(['Maths', 'English', 'Science']);
+      const locked = page.locator('[data-role="subject-locked"]');
+      await expect(locked).toHaveCount(5);
+      for (const l of await locked.all()) await expect(l).toContainText('🔒 Soon');
+      expect(await overflow(page)).toBeLessThanOrEqual(360);
+    });
+  }
+});
+
+test('round to results: Grade 1 Sound Builder challenge', async ({ page }) => {
+  await page.goto('/#/k/1/english/soundBuilder/challenge');
+  for (let i = 1; i <= 10; i++) {
+    await expect(page.locator('[data-role="progress"]')).toHaveText(`Question ${i} of 10`);
+    const word = (await page.locator('[data-word]').getAttribute('data-word'))!;
+    expect(word).toHaveLength(3);
+    for (const letter of word) {
+      await page.locator('.kit-tile-pool [data-role="tile"]', { hasText: new RegExp(`^${letter}$`) }).first().click();
+    }
+    await page.locator('[data-role="check"]').click();
+  }
+  await expect(page.locator('[data-role="results"]')).toContainText('10 correct');
+});

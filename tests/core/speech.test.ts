@@ -34,8 +34,10 @@ function fakeSynth(voices: V[] = []) {
   const synth = {
     spoken,
     voices,
-    speak: vi.fn((u: FakeUtterance) => { spoken.push(u); }),
-    cancel: vi.fn(),
+    speaking: false,
+    pending: false,
+    speak: vi.fn((u: FakeUtterance) => { spoken.push(u); synth.speaking = true; }),
+    cancel: vi.fn(() => { synth.speaking = false; synth.pending = false; }),
     getVoices: () => synth.voices,
     addEventListener: (n: string, f: () => void) => { (listeners[n] ??= []).push(f); },
     fire: (n: string) => (listeners[n] ?? []).forEach((f) => f()),
@@ -69,8 +71,8 @@ describe('createSpeech', () => {
     expect(sp.available).toBe(true);
     const p1 = sp.speak('a');
     const p2 = sp.speak('b');
-    expect(synth.cancel).toHaveBeenCalled();
-    expect(synth.cancel.mock.invocationCallOrder[1]).toBeLessThan(synth.speak.mock.invocationCallOrder[1]);
+    expect(synth.cancel).toHaveBeenCalledTimes(1); // only the busy engine is cancelled
+    expect(synth.cancel.mock.invocationCallOrder[0]).toBeLessThan(synth.speak.mock.invocationCallOrder[1]);
     await p1; // superseded, must resolve
     expect(await settled(p2)).toBe(false);
     const u = synth.spoken[1];
@@ -79,6 +81,16 @@ describe('createSpeech', () => {
     expect(u.lang).toBe('en-GB');
     u.onend!();
     await p2;
+  });
+
+  it('does not cancel an idle engine before speaking (iPad Safari drops chained utterances otherwise)', () => {
+    const synth = fakeSynth();
+    make(synth).speak('a');
+    expect(synth.cancel).not.toHaveBeenCalled();
+    synth.speaking = false;
+    synth.pending = true;
+    make(synth).speak('b');
+    expect(synth.cancel).toHaveBeenCalledTimes(1);
   });
 
   it('resolves even if onerror fires', async () => {

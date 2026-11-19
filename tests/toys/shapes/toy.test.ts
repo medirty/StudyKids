@@ -195,7 +195,7 @@ describe('demonstrate', () => {
     expect(tile(el, 'rectangle').dataset.highlight).toBe('true');
     expect(tile(el, 'circle').dataset.highlight).toBe('false');
     expect(litSides(tile(el, 'rectangle'))).toBe(4);
-    expect(ctx.spoken).toContain(SHAPES.rectangle.fact);
+    expect(ctx.spoken).toEqual(['Here is the rectangle.', "Let's count the sides."]);
     v.destroy();
     el.remove();
     vi.useRealTimers();
@@ -210,7 +210,7 @@ describe('demonstrate', () => {
     const v = await p;
     expect(tile(el, 'cone').dataset.highlight).toBe('true');
     expect(tile(el, 'cone').dataset.pulsing).toBe('true');
-    expect(ctx.spoken).toContain(SHAPES.cone.fact);
+    expect(ctx.spoken).toEqual(['Here is the cone.']);
     v.destroy();
     el.remove();
     vi.useRealTimers();

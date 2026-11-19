@@ -128,13 +128,13 @@ Explore: machine — pick a verb card → animated gears → past form + rule ca
 
 Content `affixes.ts`: entries `{root, affix, word, meaning}`: un-(happy, kind, lock, tidy), re-(play, read, write, build), dis-(agree, like, appear, obey), pre-(heat, view, school), -ful(help, care, play, colour), -less(care, help, home, fear), -ly(quick, slow, kind, sad), -ness(kind, dark, happy→happiness), -er(teach, play, paint, read). Meanings original and child-friendly (e.g. unhappy = "not happy", reread = "read again", careless = "without care", happiness = "being happy" — note y→i).
 Question `{id, prompt:'Make a word that means "{meaning}"', root, affix, word, options: 4 affixes}`; answer `{affix, word}` built by dragging/tapping an affix onto the root (spelling change auto-applied and shown, e.g. happy+ness→happiness); hint `"{affix}" means "{affixMeaning}".`; explain how `{root} + {affix} = {word}: {meaning}.`
-Explore: root cards × affix cards; combine to see/hear the word and meaning; invalid combos show `That's not a real word — try another!`.
+Explore: root cards × affix cards; combine to see/hear the word and meaning; invalid combos show `Hmm, that one isn't in our word lab — try another!` (never claim a word is fake).
 - [ ] Tests: every listed word = combine(root, affix); invalid combo detection; generator; check. Commit.
 
 ### Task 9: Story Time (`storyTime`)
 
 Content `stories.ts`: 4 ORIGINAL stories (80–150 words, Stage 3 level, British spelling, titles e.g. "The Lost Kite", "Mia's Rainy Day Plan", "The Clever Crow", "Grandpa's Garden"), each with 6 questions `{q, options: 3, answer, kind:'who'|'what'|'why'|'order'}` answerable only from the text.
-Explore: pick a story → read-along (readAloud with per-word highlight; 🔊 play/pause; paragraphs). Challenge: a round draws 10 questions from two stories (6 + 4, chosen by rng); each question shows its story (collapsible on phones) and title; no question repeated in a round. Answer via choiceCards. hint `Look back at the story: {hintSentence}` (store `evidence` sentence per question); explain why `The story says: "{evidence}"` how `So the answer is "{answer}".`
+Explore: pick a story → read-along (readAloud with per-word highlight; 🔊 play/pause; paragraphs). Challenge: a round draws 10 questions from two stories (6 + 4, chosen by rng); each question shows its story (collapsible on phones) and title; no question repeated in a round. Answer via choiceCards. hint `Look again at paragraph {n}. Which sentence tells you?` (n = the paragraph holding the stored `evidence` sentence); explain why `The story says: "{evidence}"` how `So the answer is "{answer}".`
 - [ ] Tests: every evidence string appears verbatim in its story; each question's answer ∈ options; generator returns 10 unique questions; word counts 80–150. Commit.
 
 ### Task 10: My Body & Senses (`bodySenses`)
@@ -159,7 +159,7 @@ Explore: toy car on a track; slider "Push strength" small→big; release → car
 ### Task 13: Grow a Plant (`growPlant`)
 
 `plants.ts`: parts root (takes in water, holds the plant in the soil), stem (carries water up, holds the plant up), leaf (makes food using sunlight), flower (makes seeds); needs: water, light, warmth (also air) — too much water harms roots.
-Explore: plant with three controls water/light/warmth (none/some/lots); pure `plantHealth({water, light, warmth}) → 'thriving'|'wilting'|'not growing'` (thriving only when all three are 'some', water 'lots' → wilting with "too much water" note, any 'none' → not growing with which need is missing); grows over ~3s animation. Challenge kinds: label a part (tap part on SVG) or "What does the {part} do?" (choiceCards of the four functions); hint uses the function text.
+Explore: plant with three controls water/light/warmth (none/some/lots); pure `plantHealth({water, light, warmth}) → 'thriving'|'wilting'|'not growing'` (any 'none' → not growing naming the missing need(s); water or warmth 'lots' → wilting; otherwise thriving — light 'lots' is fine, ruling 2026-11-19); grows over ~3s animation. Challenge kinds: label a part (tap part on SVG) or "What does the {part} do?" (choiceCards of the four functions); hint uses the function text.
 - [ ] Tests: `plantHealth` table for all 27 combos; content; generator. Commit.
 
 ### Task 14: Magnet Test (`magnets`)
